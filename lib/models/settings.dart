@@ -1,0 +1,67 @@
+const String tableSettings = 'settings';
+
+class SettingFields {
+  static const String id = 'id';
+  static const String logo = 'logo';
+  static const String terms = 'terms';
+  static const String logoWidth = 'logoWidth';
+  static const String logoHeight = 'logoHeight';
+
+  static final List<String> values = [
+    id,
+    logo,
+    terms,
+    logoWidth,
+    logoHeight,
+  ];
+}
+
+class Setting {
+  final int id;
+  final String logo;
+  final String terms;
+  final int logoWidth;
+  final int logoHeight;
+
+  const Setting({
+    this.id = 1,
+    this.logo =
+        "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",
+    this.terms = '',
+    this.logoWidth = 75,
+    this.logoHeight = 75,
+  });
+
+  Setting copy({
+    int? id,
+    String? logo,
+    String? terms,
+    int? logoWidth,
+    int? logoHeight,
+  }) =>
+      Setting(
+        id: id ?? this.id,
+        logo: logo ?? this.logo,
+        terms: terms ?? this.terms,
+        logoWidth: logoWidth ?? this.logoWidth,
+        logoHeight: logoHeight ?? this.logoHeight,
+      );
+
+  factory Setting.fromJson(dynamic json) {
+    return Setting(
+      id: json[SettingFields.id] ?? 1,
+      logo: json[SettingFields.logo] ?? '',
+      terms: json[SettingFields.terms] ?? '',
+      logoWidth: json[SettingFields.logoWidth] as int,
+      logoHeight: json[SettingFields.logoHeight] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        SettingFields.id: id,
+        SettingFields.logo: logo,
+        SettingFields.terms: terms,
+        SettingFields.logoWidth: logoWidth,
+        SettingFields.logoHeight: logoHeight,
+      };
+}

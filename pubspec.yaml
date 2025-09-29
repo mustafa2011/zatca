@@ -1,0 +1,54 @@
+name: zatca
+description: "Flutter app to integrate invoicing system with zatca phase 2."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  path_provider: ^2.1.5
+  sqflite: ^2.4.2
+  get: ^4.7.2
+  intl: ^0.20.2
+  http: ^1.5.0
+  shared_preferences: ^2.5.3
+  number_to_word_arabic: ^0.0.8
+  pdf: ^3.11.3
+  share_plus: ^11.1.0
+  syncfusion_flutter_pdfviewer: ^30.2.6
+  url_launcher: ^6.3.2
+  sqflite_common_ffi: ^2.3.6
+  dropdown_button2: ^2.3.9
+  sunmi_printer_plus: ^4.1.0
+  mobile_scanner: ^7.0.1
+  file_picker: ^10.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: NotoKufi
+      fonts:
+        - asset: assets/fonts/NotoKufiArabic-Regular.ttf
+        - asset: assets/fonts/NotoKufiArabic-Bold.ttf
+    - family: Tahoma
+      fonts:
+        - asset: assets/fonts/Tahoma.ttf
