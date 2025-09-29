@@ -1290,131 +1290,159 @@ CREATE TABLE $tableSuppliers (
 
   Future<num?> getTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '${year + 1}-01-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery("SELECT "
+        "SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "         WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "         ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' "
+        "AND ${InvoiceFields.date} < '${year + 1}-01-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
+
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getJanTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '$year-02-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} < '$year-02-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getFebTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-02-01' AND ${InvoiceFields.date} <= '$year-03-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-02-01' AND ${InvoiceFields.date} < '$year-03-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getMarTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-03-01' AND ${InvoiceFields.date} <= '$year-04-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-03-01' AND ${InvoiceFields.date} < '$year-04-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getAprTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-04-01' AND ${InvoiceFields.date} <= '$year-05-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-04-01' AND ${InvoiceFields.date} < '$year-05-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getMayTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-05-01' AND ${InvoiceFields.date} <= '$year-06-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-05-01' AND ${InvoiceFields.date} < '$year-06-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getJunTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-06-01' AND ${InvoiceFields.date} <= '$year-07-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-06-01' AND ${InvoiceFields.date} < '$year-07-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getJulTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-07-01' AND ${InvoiceFields.date} <= '$year-08-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-07-01' AND ${InvoiceFields.date} < '$year-08-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getAugTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-08-01' AND ${InvoiceFields.date} <= '$year-09-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-08-01' AND ${InvoiceFields.date} < '$year-09-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getSepTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-09-01' AND ${InvoiceFields.date} <= '$year-10-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-09-01' AND ${InvoiceFields.date} < '$year-10-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getOctTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-10-01' AND ${InvoiceFields.date} <= '$year-11-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-10-01' AND ${InvoiceFields.date} < '$year-11-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getNovTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-11-01' AND ${InvoiceFields.date} <= '$year-12-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-11-01' AND ${InvoiceFields.date} < '$year-12-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getDecTotalSales(int year) async {
     Database db = await database;
-    var sum = (await db.rawQuery(
-        "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-12-01' AND ${InvoiceFields.date} <= '${year + 1}-01-01'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
-        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
+    var sum = await db.rawQuery(
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-12-01' AND ${InvoiceFields.date} < '${year + 1}-01-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
