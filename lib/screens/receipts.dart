@@ -1,13 +1,15 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
 import '../helpers/fatoora_db.dart';
-import '../screens/edit_receipt_page.dart';
 import '../helpers/zatca_api.dart';
 import '../models/receipt.dart';
 import '../pdf/pdf_receipt_api.dart';
 import '../pdf/pdf_screen.dart';
+import '../screens/edit_receipt_page.dart';
 
 class ReceiptsPg extends StatefulWidget {
   const ReceiptsPg({super.key});
@@ -217,7 +219,7 @@ class _ReceiptsPgState extends State<ReceiptsPg> {
                       // height(30),
                       Padding(
                         padding: const EdgeInsets.only(
-                            top: 25.0, bottom: 25, right: 10),
+                            top: 25.0, bottom: 50, right: 10),
                         child: Column(
                           children: [
                             Text(

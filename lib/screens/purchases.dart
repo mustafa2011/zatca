@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
 import '../helpers/fatoora_db.dart';
 import '../helpers/zatca_api.dart';
 import '../models/purchase.dart';
@@ -208,7 +209,7 @@ class _PurchasesPgState extends State<PurchasesPg> {
                       // height(30),
                       Padding(
                         padding: const EdgeInsets.only(
-                            top: 25.0, bottom: 25, right: 10),
+                            top: 25.0, bottom: 50, right: 10),
                         child: Text(
                           'اجمالي الفواتير: ${NumberFormat("#,##0.00").format(_calculateTotalNetWithVat())}',
                           style: TextStyle(

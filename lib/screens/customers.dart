@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../helpers/fatoora_db.dart';
-import '../screens/edit_customer_page.dart';
 
+import '../helpers/fatoora_db.dart';
 import '../helpers/zatca_api.dart';
 import '../models/customers.dart';
 import '../models/invoice.dart';
+import '../screens/edit_customer_page.dart';
 
 class CustomersPg extends StatefulWidget {
   const CustomersPg({super.key});
@@ -128,7 +128,11 @@ class _CustomersPgState extends State<CustomersPg> {
                                     softWrap: true,
                                   ),
                                   Text(
-                                    "مبيعات العميل: ${NumberFormat("#,##0.00").format(_calcTotal(customer.id!))}",
+                                    "مبيعات العميل: ${NumberFormat("#,##0.00").format(calcCustomerTotalSales(customer.id!))}",
+                                    softWrap: true,
+                                  ),
+                                  Text(
+                                    "مرتجعات العميل: ${NumberFormat("#,##0.00").format(calcCustomerTotalCredits(customer.id!))}",
                                     softWrap: true,
                                   ),
                                 ],
@@ -164,8 +168,9 @@ class _CustomersPgState extends State<CustomersPg> {
                                                     TextButton(
                                                       child: const Text("نعم"),
                                                       onPressed: () async {
-                                                        double ttl = _calcTotal(
-                                                            customer.id!);
+                                                        double ttl =
+                                                            calcCustomerTotalSales(
+                                                                customer.id!);
                                                         if (ttl > 0) {
                                                           ZatcaAPI.snackError(
                                                               "لا يمكن حذف عميل له مبيعات");
@@ -214,11 +219,21 @@ class _CustomersPgState extends State<CustomersPg> {
                       // height(30),
                       Padding(
                         padding: const EdgeInsets.only(
-                            top: 25.0, bottom: 25, right: 10),
-                        child: Text(
-                          'اجمالي مبيعات العملاء: ${NumberFormat("#,##0.00").format(_calcTotalSales())}',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                            top: 25.0, bottom: 50, right: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'اجمالي مبيعات العملاء: ${NumberFormat("#,##0.00").format(calcTotalSales())}',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              'اجمالي مرتجعات العملاء: ${NumberFormat("#,##0.00").format(calcTotalCredits())}',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -241,15 +256,44 @@ class _CustomersPgState extends State<CustomersPg> {
     );
   }
 
-  double _calcTotal(int id) {
+  double calcCustomerTotalSales(int id) {
     return _filteredSales
         .where((sale) => sale.payerId == id) // filter by customerId
-        .fold(0.0, (sum, sale) => sum + sale.total); // sum the totals
+        .fold(0.0, (sum, sale) {
+      if (sale.invoiceKind == "invoice") {
+        return sum + sale.total;
+      }
+      return sum;
+    }); // sum the totals
   }
 
-  double _calcTotalSales() {
-    return _filteredSales.fold(
-        0.0, (sum, sale) => sum + sale.total); // sum the totals
+  double calcCustomerTotalCredits(int id) {
+    return _filteredSales
+        .where((sale) => sale.payerId == id) // filter by customerId
+        .fold(0.0, (sum, sale) {
+      if (sale.invoiceKind == "credit") {
+        return sum + sale.total;
+      }
+      return sum;
+    }); // sum the totals
+  }
+
+  double calcTotalSales() {
+    return _filteredSales.fold(0.0, (sum, sale) {
+      if (sale.invoiceKind == "invoice") {
+        return sum + sale.total;
+      }
+      return sum;
+    });
+  }
+
+  double calcTotalCredits() {
+    return _filteredSales.fold(0.0, (sum, sale) {
+      if (sale.invoiceKind == "credit") {
+        return sum + sale.total;
+      }
+      return sum;
+    });
   }
 
   void _filterCustomers() {

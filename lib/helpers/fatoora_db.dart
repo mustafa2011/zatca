@@ -1168,7 +1168,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     int? count = Sqflite.firstIntValue(await db.rawQuery(
         "SELECT COUNT(*) FROM $tableInvoices "
-        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '${year + 1}-01-01'"));
     return count;
   }
 
@@ -1288,19 +1288,13 @@ CREATE TABLE $tableSuppliers (
     return count;
   }
 
-  Future<num?> getInvoicesTotal() async {
-    Database db = await database;
-    var sum = (await db.rawQuery(
-        'SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices'));
-    return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
-  }
-
   Future<num?> getTotalSales(int year) async {
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '$year-12-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '${year + 1}-01-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1308,8 +1302,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '$year-01-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '$year-02-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1317,8 +1312,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-02-01' AND ${InvoiceFields.date} <= '$year-02-$lastFebDay 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-02-01' AND ${InvoiceFields.date} <= '$year-03-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1326,8 +1322,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-03-01' AND ${InvoiceFields.date} <= '$year-03-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-03-01' AND ${InvoiceFields.date} <= '$year-04-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1335,8 +1332,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-04-01' AND ${InvoiceFields.date} <= '$year-04-30 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-04-01' AND ${InvoiceFields.date} <= '$year-05-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1344,8 +1342,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-05-01' AND ${InvoiceFields.date} <= '$year-05-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-05-01' AND ${InvoiceFields.date} <= '$year-06-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1353,8 +1352,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-06-01' AND ${InvoiceFields.date} <= '$year-06-30 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-06-01' AND ${InvoiceFields.date} <= '$year-07-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1362,8 +1362,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-07-01' AND ${InvoiceFields.date} <= '$year-07-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-07-01' AND ${InvoiceFields.date} <= '$year-08-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1371,8 +1372,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-08-01' AND ${InvoiceFields.date} <= '$year-08-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-08-01' AND ${InvoiceFields.date} <= '$year-09-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1380,8 +1382,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-09-01' AND ${InvoiceFields.date} <= '$year-09-30 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-09-01' AND ${InvoiceFields.date} <= '$year-10-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1389,8 +1392,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-10-01' AND ${InvoiceFields.date} <= '$year-10-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-10-01' AND ${InvoiceFields.date} <= '$year-11-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1398,8 +1402,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-11-01' AND ${InvoiceFields.date} <= '$year-11-30 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-11-01' AND ${InvoiceFields.date} <= '$year-12-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1407,8 +1412,9 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices  "
-        "WHERE ${InvoiceFields.date} >= '$year-12-01' AND ${InvoiceFields.date} <= '$year-12-31 23:59'"
-        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"));
+        "WHERE ${InvoiceFields.date} >= '$year-12-01' AND ${InvoiceFields.date} <= '${year + 1}-01-01'"
+        " AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')"
+        " AND ${InvoiceFields.invoiceKind} = 'invoice'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1526,51 +1532,6 @@ CREATE TABLE $tableSuppliers (
     return result.map((json) => Invoice.fromJson(json)).toList();
   }
 
-  Future<List<Invoice>> getAllInvoicesInYear(int year) async {
-    final db = await instance.database;
-
-    final result = await db.rawQuery(
-        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '$year-12-31' ORDER BY ${InvoiceFields.id} DESC");
-
-    return result.map((json) => Invoice.fromJson(json)).toList();
-  }
-
-  Future<List<Purchase>> getAllPurchasesInYear(int year) async {
-    final db = await instance.database;
-
-    final result = await db.rawQuery(
-        "SELECT * FROM $tablePurchases WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '$year-12-31' ORDER BY ${PurchaseFields.id} DESC");
-
-    return result.map((json) => Purchase.fromJson(json)).toList();
-  }
-
-  Future<List<Receipt>> getAllReceiptsInYear(int year) async {
-    final db = await instance.database;
-
-    final result = await db.rawQuery(
-        "SELECT * FROM $tableReceipts WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '$year-12-31' ORDER BY ${ReceiptFields.id} DESC");
-
-    return result.map((json) => Receipt.fromJson(json)).toList();
-  }
-
-  Future<List<Estimate>> getAllEstimatesInYear(int year) async {
-    final db = await instance.database;
-
-    final result = await db.rawQuery(
-        "SELECT * FROM $tableEstimates WHERE ${EstimateFields.date} >= '$year-01-01' AND ${EstimateFields.date} <= '$year-12-31' ORDER BY ${EstimateFields.id} DESC");
-
-    return result.map((json) => Estimate.fromJson(json)).toList();
-  }
-
-  Future<List<Po>> getAllPoInYear(int year) async {
-    final db = await instance.database;
-
-    final result = await db.rawQuery(
-        "SELECT * FROM $tablePo WHERE ${PoFields.date} >= '$year-01-01' AND ${PoFields.date} <= '$year-12-31' ORDER BY ${PoFields.id} DESC");
-
-    return result.map((json) => Po.fromJson(json)).toList();
-  }
-
   Future<List<Purchase>> getAllPurchasesBetweenTwoDates(
       String dateFrom, String dateTo) async {
     final db = await instance.database;
@@ -1662,7 +1623,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     int? count = Sqflite.firstIntValue(await db.rawQuery(
         "SELECT COUNT(*) FROM $tablePurchases "
-        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '${year + 1}-01-01'"));
     return count;
   }
 
@@ -1712,7 +1673,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${ReceiptFields.amount}) AS ttl FROM $tableReceipts  "
-        "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1720,7 +1681,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1728,7 +1689,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${EstimateFields.total}) AS ttl FROM $tableEstimates  "
-        "WHERE ${EstimateFields.date} >= '$year-01-01' AND ${EstimateFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${EstimateFields.date} >= '$year-01-01' AND ${EstimateFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1736,7 +1697,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PoFields.total}) AS ttl FROM $tablePo  "
-        "WHERE ${PoFields.date} >= '$year-01-01' AND ${PoFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${PoFields.date} >= '$year-01-01' AND ${PoFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1744,7 +1705,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${ReceiptFields.amount}) AS ttl FROM $tableReceipts  "
-        "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1752,7 +1713,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases "
-        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '$year-01-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '$year-02-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1760,7 +1721,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-02-01' AND ${PurchaseFields.date} <= '$year-02-$lastFebDay 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-02-01' AND ${PurchaseFields.date} <= '$year-03-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1768,7 +1729,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-03-01' AND ${PurchaseFields.date} <= '$year-03-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-03-01' AND ${PurchaseFields.date} <= '$year-04-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1776,7 +1737,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-04-01' AND ${PurchaseFields.date} <= '$year-04-30 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-04-01' AND ${PurchaseFields.date} <= '$year-05-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1784,7 +1745,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-05-01' AND ${PurchaseFields.date} <= '$year-05-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-05-01' AND ${PurchaseFields.date} <= '$year-06-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1792,7 +1753,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-06-01' AND ${PurchaseFields.date} <= '$year-06-30 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-06-01' AND ${PurchaseFields.date} <= '$year-07-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1800,7 +1761,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-07-01' AND ${PurchaseFields.date} <= '$year-07-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-07-01' AND ${PurchaseFields.date} <= '$year-08-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1808,7 +1769,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-08-01' AND ${PurchaseFields.date} <= '$year-08-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-08-01' AND ${PurchaseFields.date} <= '$year-09-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1816,7 +1777,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-09-01' AND ${PurchaseFields.date} <= '$year-09-30 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-09-01' AND ${PurchaseFields.date} <= '$year-10-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1824,7 +1785,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-10-01' AND ${PurchaseFields.date} <= '$year-10-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-10-01' AND ${PurchaseFields.date} <= '$year-11-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1832,7 +1793,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-11-01' AND ${PurchaseFields.date} <= '$year-11-30 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-11-01' AND ${PurchaseFields.date} <= '$year-12-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1840,7 +1801,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-        "WHERE ${PurchaseFields.date} >= '$year-12-01' AND ${PurchaseFields.date} <= '$year-12-31 23:59'"));
+        "WHERE ${PurchaseFields.date} >= '$year-12-01' AND ${PurchaseFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 

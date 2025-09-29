@@ -1,14 +1,16 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
 import '../helpers/fatoora_db.dart';
-import '../screens/edit_estimate_page.dart';
 import '../helpers/zatca_api.dart';
 import '../models/customers.dart';
 import '../models/estimate.dart';
 import '../pdf/pdf_estimate_api.dart';
 import '../pdf/pdf_screen.dart';
+import '../screens/edit_estimate_page.dart';
 
 class EstimatesPg extends StatefulWidget {
   const EstimatesPg({super.key});
@@ -218,7 +220,7 @@ class _EstimatesPgState extends State<EstimatesPg> {
                       // height(30),
                       Padding(
                         padding: const EdgeInsets.only(
-                            top: 25.0, bottom: 25, right: 10),
+                            top: 25.0, bottom: 50, right: 10),
                         child: Text(
                           'اجمالي العروض: ${NumberFormat("#,##0.00").format(_calculateTotalNetWithVat())}',
                           style: TextStyle(

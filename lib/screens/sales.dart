@@ -264,10 +264,9 @@ class _InvoicesPgState extends State<InvoicesPg> {
                           },
                         ),
                       ),
-                      // height(30),
                       Padding(
                         padding: const EdgeInsets.only(
-                            top: 25.0, bottom: 25, right: 10),
+                            top: 25.0, bottom: 50, right: 10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
