@@ -4,13 +4,13 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart';
+import 'package:zatca/helpers/fatoora_db.dart';
+import 'package:zatca/models/customers.dart';
+import 'package:zatca/models/estimate.dart';
+import 'package:zatca/models/settings.dart';
+import 'package:zatca/pdf/pdf_api.dart';
 
-import '../helpers/fatoora_db.dart';
 import '../helpers/utils.dart';
-import '../models/customers.dart';
-import '../models/estimate.dart';
-import '../models/settings.dart';
-import '../pdf/pdf_api.dart';
 
 class PdfEstimateApi {
   static Future<File> generate(
@@ -22,8 +22,8 @@ class PdfEstimateApi {
       bool isPreview,
       {bool isEstimate = false}) async {
     var myTheme = ThemeData.withFont(
-      base: Font.ttf(await rootBundle.load(tahoma)),
-      bold: Font.ttf(await rootBundle.load(notoBold)),
+      base: Font.ttf(await rootBundle.load("assets/fonts/Tahoma.ttf")),
+      bold: Font.ttf(await rootBundle.load("assets/fonts/Cairo-Bold.ttf")),
     );
     final pdf = Document(theme: myTheme);
     final settings = await FatooraDB.instance.getAllSettings();
@@ -37,7 +37,7 @@ class PdfEstimateApi {
               SizedBox(height: 0.2 * PdfPageFormat.cm),
               buildEstimate(estimate, estimateLines),
               buildTotal(estimate),
-              buildTerms(seller),
+              estimate.notes.isEmpty ? Divider() : buildTerms(estimate),
             ],
         footer: (context) {
           return Container(
@@ -360,7 +360,7 @@ class PdfEstimateApi {
           itemCount: data.length,
           itemBuilder: (context, index) {
             return Container(
-              // padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.only(top: 5, bottom: 5),
               color: index % 2 == 1 ? PdfColors.grey100 : PdfColors.white,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -403,7 +403,7 @@ class PdfEstimateApi {
                       child: Text(
                         data[index][4],
                         textDirection: TextDirection.rtl,
-                        style: const TextStyle(fontSize: 10),
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ),
                   ),
@@ -471,13 +471,13 @@ class PdfEstimateApi {
     );
   }
 
-  static Widget buildTerms(Setting seller) {
+  static Widget buildTerms(Estimate estimate) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Divider(),
-        buildText(title: 'الشروط والأحكام', value: ''),
-        buildConditionText(text: seller.terms),
+        buildText(title: 'ملاحظة', value: ''),
+        buildConditionText(text: estimate.notes),
       ],
     );
   }
@@ -500,7 +500,7 @@ class PdfEstimateApi {
     required String value,
   }) {
     final styleTitle = TextStyle(fontWeight: FontWeight.bold, fontSize: 10);
-    const styleValue = TextStyle(fontSize: 10);
+    const styleValue = TextStyle(fontSize: 12);
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -521,7 +521,7 @@ class PdfEstimateApi {
     bool unite = false,
   }) {
     final style =
-        titleStyle ?? TextStyle(fontWeight: FontWeight.bold, fontSize: 10);
+        titleStyle ?? TextStyle(fontWeight: FontWeight.bold, fontSize: 12);
 
     return Container(
       width: width,
@@ -542,7 +542,7 @@ class PdfEstimateApi {
     double width = double.infinity,
     TextStyle? titleStyle,
   }) {
-    final style = titleStyle ?? const TextStyle(fontSize: 10);
+    final style = titleStyle ?? const TextStyle(fontSize: 12);
 
     return Container(
       width: width,

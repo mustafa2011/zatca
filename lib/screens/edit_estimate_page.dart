@@ -80,6 +80,7 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
   final TextEditingController _totalDiscount = TextEditingController();
   final TextEditingController _customerCellphone = TextEditingController();
   final TextEditingController _payMethod = TextEditingController();
+  final TextEditingController _notes = TextEditingController();
   final FocusNode focusNode = FocusNode();
 
   num total = 0.0;
@@ -93,6 +94,7 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
   List<String> productsList = [];
   int curPayerId = 1;
   String curProject = '';
+  String curNote = '';
   String curDate = Utils.formatDate(DateTime.now());
   String curSupplyDate = Utils.formatDate(DateTime.now());
   bool printerConnected = false;
@@ -144,6 +146,7 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
       if (widget.estimate != null) {
         curPayerId = widget.estimate!.payerId!;
         curProject = widget.estimate!.project;
+        curNote = widget.estimate!.notes;
         curDate = widget.estimate!.date;
         curSupplyDate = widget.estimate!.supplyDate;
         selectedPayMethod = widget.estimate!.paymentMethod;
@@ -172,6 +175,7 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
       _payer.text = payer.name;
       _payerVatNumber.text = payer.vatNumber;
       _project.text = curProject;
+      _notes.text = curNote;
       _date.text = curDate;
       _supplyDate.text = curSupplyDate;
       _estimateNo.text = estimateNo;
@@ -368,6 +372,8 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
                               // Expanded(child: buildProject()),
                             ],
                           ),
+                          Utils.space(0.25, 0),
+                          buildNotes(),
                         ],
                       ),
                     ),
@@ -978,6 +984,11 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
         onTap: _selectSupplyDate,
       );
 
+  Widget buildNotes() => MyTextFormField(
+        controller: _notes,
+        labelText: 'ملاحظة',
+      );
+
   void saveAndPrint() {
     setState(() {
       isPreview = false;
@@ -1036,6 +1047,7 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
       supplyDate: _supplyDate.text,
       sellerId: Utils.clientId,
       project: _project.text,
+      notes: _notes.text,
       total: total - totalDiscount,
       totalVat: (total - totalDiscount) - ((total - totalDiscount) / 1.15),
       // totalDiscount: totalDiscount,

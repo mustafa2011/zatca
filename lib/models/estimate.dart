@@ -1,4 +1,3 @@
-
 const String tableEstimates = 'estimates';
 const String tableEstimateLines = 'estimate_lines';
 
@@ -14,11 +13,23 @@ class EstimateFields {
   static const String payerId = 'payerId';
   static const String noOfLines = 'noOfLines';
   static const String project = 'project';
+  static const String notes = 'notes';
   static const String paymentMethod = 'paymentMethod';
 
-
-  static List<String> getEstimateFields() =>
-      [id, estimateNo, date, supplyDate, sellerId, total, totalVat, posted, payerId, noOfLines, project, paymentMethod];
+  static List<String> getEstimateFields() => [
+        id,
+        estimateNo,
+        date,
+        supplyDate,
+        sellerId,
+        total,
+        totalVat,
+        posted,
+        payerId,
+        noOfLines,
+        project,
+        paymentMethod
+      ];
 }
 
 class Estimate {
@@ -33,51 +44,53 @@ class Estimate {
   final int? payerId;
   final int noOfLines;
   final String project;
+  final String notes;
   final String paymentMethod;
 
+  Estimate({
+    this.id,
+    this.estimateNo = '',
+    this.date = '',
+    this.supplyDate = '',
+    this.sellerId,
+    this.total = 0.0,
+    this.totalVat = 0.0,
+    this.posted = 0,
+    this.payerId,
+    this.noOfLines = 0,
+    this.project = '',
+    this.notes = '',
+    this.paymentMethod = '',
+  }); //: date = date ?? DateTime.now();
 
-  Estimate(
-      {this.id,
-        this.estimateNo='',
-        this.date='',
-        this.supplyDate='',
-        this.sellerId,
-        this.total=0.0,
-        this.totalVat=0.0,
-        this.posted = 0,
-        this.payerId,
-        this.noOfLines=0,
-        this.project='',
-        this.paymentMethod='',
-      }); //: date = date ?? DateTime.now();
-
-  Estimate copy(
-      {int? id,
-        String? estimateNo,
-        String? date,
-        String? supplyDate,
-        int? sellerId,
-        num? total,
-        num? totalVat,
-        int? posted,
-        int? payerId,
-        int? noOfLines,
-        String? project,
-        String? paymentMethod,
-
-      }) =>
+  Estimate copy({
+    int? id,
+    String? estimateNo,
+    String? date,
+    String? supplyDate,
+    int? sellerId,
+    num? total,
+    num? totalVat,
+    int? posted,
+    int? payerId,
+    int? noOfLines,
+    String? project,
+    String? notes,
+    String? paymentMethod,
+  }) =>
       Estimate(
-        id: id?? this.id,
-        estimateNo: estimateNo?? this.estimateNo,
-        date: date?? this.date,
-        supplyDate: supplyDate?? this.supplyDate,
-        sellerId: sellerId?? this.sellerId,
-        total: total?? this.total,
-        totalVat: totalVat?? this.totalVat,
-        posted: posted?? this.posted,
-        payerId: payerId?? this.payerId,
+        id: id ?? this.id,
+        estimateNo: estimateNo ?? this.estimateNo,
+        date: date ?? this.date,
+        supplyDate: supplyDate ?? this.supplyDate,
+        sellerId: sellerId ?? this.sellerId,
+        total: total ?? this.total,
+        totalVat: totalVat ?? this.totalVat,
+        posted: posted ?? this.posted,
+        payerId: payerId ?? this.payerId,
         noOfLines: noOfLines ?? this.noOfLines,
         project: project ?? this.project,
+        notes: project ?? this.notes,
         paymentMethod: paymentMethod ?? this.paymentMethod,
       );
 
@@ -89,42 +102,45 @@ class Estimate {
       supplyDate: json[EstimateFields.supplyDate] as String,
       sellerId: json[EstimateFields.sellerId] as int,
       total: json[EstimateFields.total] as num,
-      totalVat:  json[EstimateFields.totalVat] as num,
-      posted:  json[EstimateFields.posted] as int,
+      totalVat: json[EstimateFields.totalVat] as num,
+      posted: json[EstimateFields.posted] as int,
       payerId: json[EstimateFields.payerId] as int,
       noOfLines: json[EstimateFields.noOfLines] as int,
       project: json[EstimateFields.project] ?? '',
+      notes: json[EstimateFields.notes] ?? '',
       paymentMethod: json[EstimateFields.paymentMethod] ?? '',
     );
   }
+
   Map<String, dynamic> toJson() => {
-    EstimateFields.id: id,
-    EstimateFields.estimateNo: estimateNo,
-    EstimateFields.date: date,
-    EstimateFields.supplyDate: supplyDate,
-    EstimateFields.sellerId: sellerId,
-    EstimateFields.total: total,
-    EstimateFields.totalVat: totalVat,
-    EstimateFields.posted: posted,
-    EstimateFields.payerId: payerId,
-    EstimateFields.noOfLines: noOfLines,
-    EstimateFields.project: project,
-    EstimateFields.paymentMethod: paymentMethod,
-  };
-  String toParams() =>
-      "?id=$id"
-          "&estimateNo=$estimateNo"
-          "&date=$date"
-          "&supplyDate=$supplyDate"
-          "&sellerId=$sellerId"
-          "&total=$total"
-          "&totalVat=$totalVat"
-          "&posted=$posted"
-          "&payerId=$payerId"
-          "&noOfLines=$noOfLines"
-          "&project=$project"
-          "&paymentMethod=$paymentMethod"
-  ;
+        EstimateFields.id: id,
+        EstimateFields.estimateNo: estimateNo,
+        EstimateFields.date: date,
+        EstimateFields.supplyDate: supplyDate,
+        EstimateFields.sellerId: sellerId,
+        EstimateFields.total: total,
+        EstimateFields.totalVat: totalVat,
+        EstimateFields.posted: posted,
+        EstimateFields.payerId: payerId,
+        EstimateFields.noOfLines: noOfLines,
+        EstimateFields.project: project,
+        EstimateFields.notes: notes,
+        EstimateFields.paymentMethod: paymentMethod,
+      };
+
+  String toParams() => "?id=$id"
+      "&estimateNo=$estimateNo"
+      "&date=$date"
+      "&supplyDate=$supplyDate"
+      "&sellerId=$sellerId"
+      "&total=$total"
+      "&totalVat=$totalVat"
+      "&posted=$posted"
+      "&payerId=$payerId"
+      "&noOfLines=$noOfLines"
+      "&project=$project"
+      "&notes=$notes"
+      "&paymentMethod=$paymentMethod";
 }
 
 class EstimateLinesFields {
@@ -133,7 +149,6 @@ class EstimateLinesFields {
   static const String productName = 'productName';
   static const String price = 'price';
   static const String qty = 'qty';
-
 
   static List<String> getEstimateLinesFields() =>
       [recId, id, productName, price, qty];
@@ -146,30 +161,27 @@ class EstimateLines {
   final num price;
   final num qty;
 
+  EstimateLines({
+    this.id,
+    required this.recId,
+    required this.productName,
+    required this.price,
+    this.qty = 1,
+  });
 
-  EstimateLines(
-      {
-        this.id,
-        required this.recId,
-        required this.productName,
-        required this.price,
-        this.qty = 1,
-      });
-
-  EstimateLines copy(
-      {
-        int? id,
-        int? recId,
-        String? productName,
-        num? price,
-        num? qty,
-      }) =>
+  EstimateLines copy({
+    int? id,
+    int? recId,
+    String? productName,
+    num? price,
+    num? qty,
+  }) =>
       EstimateLines(
-        id: id?? this.id,
-        recId: recId?? this.recId,
-        productName: productName?? this.productName,
-        price: price?? this.price,
-        qty: qty?? this.qty,
+        id: id ?? this.id,
+        recId: recId ?? this.recId,
+        productName: productName ?? this.productName,
+        price: price ?? this.price,
+        qty: qty ?? this.qty,
       );
 
   factory EstimateLines.fromJson(dynamic json) {
@@ -178,25 +190,21 @@ class EstimateLines {
       recId: json[EstimateLinesFields.recId] as int,
       productName: json[EstimateLinesFields.productName],
       price: json[EstimateLinesFields.price] as num,
-      qty:  json[EstimateLinesFields.qty] as num,
+      qty: json[EstimateLinesFields.qty] as num,
     );
   }
-  Map<String, dynamic> toJson() => {
-    EstimateLinesFields.id: id,
-    EstimateLinesFields.recId: recId,
-    EstimateLinesFields.productName: productName,
-    EstimateLinesFields.price: price,
-    EstimateLinesFields.qty: qty,
 
-  };
-  String toParams() =>
-      "?id=$id"
+  Map<String, dynamic> toJson() => {
+        EstimateLinesFields.id: id,
+        EstimateLinesFields.recId: recId,
+        EstimateLinesFields.productName: productName,
+        EstimateLinesFields.price: price,
+        EstimateLinesFields.qty: qty,
+      };
+
+  String toParams() => "?id=$id"
       "&recId=$recId"
       "&productName=$productName"
       "&price=$price"
-      "&qty=$qty"
-  ;
+      "&qty=$qty";
 }
-
-
-
