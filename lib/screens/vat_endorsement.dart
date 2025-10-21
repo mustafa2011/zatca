@@ -1,14 +1,15 @@
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../helpers/zatca_api.dart';
-import '../models/product.dart';
-import '../widgets/widget.dart';
-import '../models/settings.dart';
-import '../widgets/buttons.dart';
+
 import '../helpers/fatoora_db.dart';
 import '../helpers/utils.dart';
+import '../helpers/zatca_api.dart';
+import '../models/product.dart';
+import '../models/settings.dart';
 import '../screens/home.dart';
+import '../widgets/buttons.dart';
+import '../widgets/widget.dart';
 
 class VatEndorsementPage extends StatefulWidget {
   const VatEndorsementPage({super.key});
@@ -232,43 +233,13 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
             Utils.space(4, 0),
             buildAmount('الصافي:', (totalSales! - totalPurchases!)),
             Utils.space(2, 0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'اجمالي المصروفات: ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Container(
-                  color: Colors.orange,
-                  width: 100,
-                  child: Text(
-                    '${Utils.formatNoCurrency(totalExpenses!)}',
-                    style: TextStyle(color: Colors.white),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              ],
-            ),
+            buildNetAmount('اجمالي المصروفات:', (totalExpenses!)),
             Utils.space(2, 0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'صافي الربح: ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Container(
-                  color: Colors.green,
-                  width: 100,
-                  child: Text(
-                    '${Utils.formatNoCurrency(totalSales! - totalPurchases! - totalExpenses!)}',
-                    style: TextStyle(color: Colors.white),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              ],
-            ),
+            buildNetAmount(
+                'صافي الربح:',
+                ((totalSales! / 1.15) -
+                    (totalPurchases! / 1.15) -
+                    totalExpenses!)),
           ]),
         ),
       );
@@ -351,8 +322,8 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
                         SizedBox(
                           width: 100,
                           child: Text(
-                            'المبلغ',
-                            textAlign: TextAlign.center,
+                            'المبلغ بدون ض',
+                            textAlign: TextAlign.right,
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -361,7 +332,7 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
                           width: 100,
                           child: Text(
                             'الضريبة',
-                            textAlign: TextAlign.center,
+                            textAlign: TextAlign.right,
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -396,6 +367,7 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
               Row(
                 children: [
                   Container(
+                    padding: EdgeInsets.only(left: 3, right: 3),
                     color: caption == 'الإجمالي:'
                         ? null
                         : caption == 'الصافي:'
@@ -406,7 +378,7 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
                     width: 100,
                     child: Text(
                       Utils.formatNoCurrency(total / 1.15),
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.right,
                       style: TextStyle(
                           fontWeight:
                               caption == 'الإجمالي:' || caption == 'الصافي:'
@@ -416,6 +388,7 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
                   ),
                   const SizedBox(width: 10),
                   Container(
+                    padding: EdgeInsets.only(left: 3, right: 3),
                     color: caption == 'الإجمالي:'
                         ? null
                         : caption == 'الصافي:'
@@ -426,7 +399,7 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
                     width: 100,
                     child: Text(
                       Utils.formatNoCurrency(total - total / 1.15),
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.right,
                       style: TextStyle(
                         fontWeight:
                             caption == 'الإجمالي:' || caption == 'الصافي:'
@@ -440,6 +413,46 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
                       ),
                     ),
                   ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+
+  Widget buildNetAmount(String caption, num total) => Column(
+        children: [
+          const SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                ' $caption',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.only(left: 3, right: 3),
+                    color: caption == 'اجمالي المصروفات:'
+                        ? Colors.orange
+                        : caption == 'صافي الربح:'
+                            ? total >= 0
+                                ? Colors.green[200]
+                                : Colors.red[200]
+                            : null,
+                    width: 100,
+                    child: Text(
+                      Utils.formatNoCurrency(total),
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        // color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(width: 100),
                 ],
               ),
             ],
