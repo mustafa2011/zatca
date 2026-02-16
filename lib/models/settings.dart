@@ -6,6 +6,10 @@ class SettingFields {
   static const String terms = 'terms';
   static const String logoWidth = 'logoWidth';
   static const String logoHeight = 'logoHeight';
+  static const String environment = 'environment';
+  static const String devAuthorization = 'devAuthorization';
+  static const String simAuthorization = 'simAuthorization';
+  static const String coreAuthorization = 'coreAuthorization';
 
   static final List<String> values = [
     id,
@@ -13,6 +17,10 @@ class SettingFields {
     terms,
     logoWidth,
     logoHeight,
+    environment,
+    devAuthorization,
+    simAuthorization,
+    coreAuthorization,
   ];
 }
 
@@ -22,6 +30,10 @@ class Setting {
   final String terms;
   final int logoWidth;
   final int logoHeight;
+  final String environment;
+  final String devAuthorization;
+  final String simAuthorization;
+  final String coreAuthorization;
 
   const Setting({
     this.id = 1,
@@ -30,6 +42,10 @@ class Setting {
     this.terms = '',
     this.logoWidth = 75,
     this.logoHeight = 75,
+    this.environment = "",
+    this.devAuthorization = "",
+    this.simAuthorization = "",
+    this.coreAuthorization = "",
   });
 
   Setting copy({
@@ -38,6 +54,10 @@ class Setting {
     String? terms,
     int? logoWidth,
     int? logoHeight,
+    String? environment,
+    String? devAuthorization,
+    String? simAuthorization,
+    String? coreAuthorization,
   }) =>
       Setting(
         id: id ?? this.id,
@@ -45,6 +65,10 @@ class Setting {
         terms: terms ?? this.terms,
         logoWidth: logoWidth ?? this.logoWidth,
         logoHeight: logoHeight ?? this.logoHeight,
+        environment: environment ?? this.environment,
+        devAuthorization: devAuthorization ?? this.devAuthorization,
+        simAuthorization: simAuthorization ?? this.simAuthorization,
+        coreAuthorization: coreAuthorization ?? this.coreAuthorization,
       );
 
   factory Setting.fromJson(dynamic json) {
@@ -54,6 +78,10 @@ class Setting {
       terms: json[SettingFields.terms] ?? '',
       logoWidth: json[SettingFields.logoWidth] as int,
       logoHeight: json[SettingFields.logoHeight] as int,
+      environment: json[SettingFields.environment] ?? '',
+      devAuthorization: json[SettingFields.devAuthorization] ?? '',
+      simAuthorization: json[SettingFields.simAuthorization] ?? '',
+      coreAuthorization: json[SettingFields.coreAuthorization] ?? '',
     );
   }
 
@@ -63,5 +91,19 @@ class Setting {
         SettingFields.terms: terms,
         SettingFields.logoWidth: logoWidth,
         SettingFields.logoHeight: logoHeight,
+        SettingFields.environment: environment,
+        SettingFields.devAuthorization: devAuthorization,
+        SettingFields.simAuthorization: simAuthorization,
+        SettingFields.coreAuthorization: coreAuthorization,
       };
+
+  String toParams() => "?id=$id"
+      "&logo=$logo"
+      "&terms=$terms"
+      "&logoWidth=$logoWidth"
+      "&logoHeight=$logoHeight"
+      "&environment=$environment"
+      "&devAuthorization=$devAuthorization"
+      "&simAuthorization=$simAuthorization"
+      "&coreAuthorization=$coreAuthorization";
 }

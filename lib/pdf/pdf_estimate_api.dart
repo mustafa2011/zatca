@@ -161,10 +161,15 @@ class PdfEstimateApi {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           Row(children: [
-            Text(
-              subTitle,
-              textDirection: TextDirection.rtl,
-              style: TextStyle(fontWeight: FontWeight.normal),
+            SizedBox(
+              width: 290,
+              child: Expanded(
+                child: Text(
+                  subTitle,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontWeight: FontWeight.normal),
+                ),
+              ),
             ),
             SizedBox(width: 5),
             Text(

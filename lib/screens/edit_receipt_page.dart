@@ -5,10 +5,12 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:zatca/screens/receipts.dart';
 
 import '../helpers/fatoora_db.dart';
 import '../helpers/utils.dart';
 import '../helpers/zatca_api.dart';
+import '../models/customers.dart';
 import '../models/receipt.dart';
 import '../models/settings.dart';
 import '../pdf/pdf_receipt_api.dart';
@@ -65,6 +67,8 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
   bool isLoading = false;
   String language = 'Arabic';
   String pdfPath = "";
+  late List<String> customers = [];
+  int payerId = 0;
 
   @override
   void initState() {
@@ -78,6 +82,15 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
     language = "Arabic";
     final pdfDir = await getApplicationDocumentsDirectory();
     pdfPath = "${pdfDir.path}/RECEIPT.pdf";
+    List<Customer> list = await db.getAllCustomers();
+    if (list.isEmpty) {
+      await db.createCustomer(
+          const Customer(name: 'عميل نقدي', vatNumber: '000000000000000'));
+    }
+    customers.clear();
+    for (int i = 0; i < list.length; i++) {
+      customers.add("${list[i].id}-${list[i].name}");
+    }
     try {
       setState(() => isLoading = true);
       var user = await db.getAllSettings();
@@ -200,7 +213,7 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
                       ),
                     ],
                   ),
-                  receiptType == "صرف" ? buildPayTo() : buildReceivedFrom(),
+                  receiptType == "صرف" ? buildPayTo() : buildPayer(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -455,6 +468,78 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
         ),
       );
 
+  Widget buildPayer() => Container(
+        padding: const EdgeInsets.only(top: 5, bottom: 5),
+        margin: const EdgeInsets.only(left: 5, right: 5),
+        child: DropdownButtonFormField2<String>(
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'استلمنا من',
+            labelStyle: TextStyle(fontSize: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20.0),
+                topRight: Radius.circular(20.0),
+              ),
+            ),
+          ),
+          hint: Text(_receivedFrom.text, style: dataStyle),
+          items: customers
+              .map((String item) => DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(
+                      item.split('-')[1],
+                      style: dataStyle,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ))
+              .toList(),
+          onChanged: (String? value) {
+            String customerName = value!.split('-')[1];
+            setState(() {
+              payerId = int.parse(value.split('-')[0]);
+              _receivedFrom.text = customerName;
+            });
+          },
+          dropdownStyleData: const DropdownStyleData(
+            maxHeight: 250,
+            offset: Offset(0, 0),
+            scrollbarTheme: ScrollbarThemeData(radius: Radius.circular(40)),
+          ),
+          menuItemStyleData: const MenuItemStyleData(
+            height: 50,
+            padding: EdgeInsets.only(left: 14, right: 14),
+          ),
+          dropdownSearchData: DropdownSearchData(
+            searchController: _receivedFrom,
+            searchInnerWidgetHeight: 50,
+            searchInnerWidget: Container(
+              height: 50,
+              padding:
+                  const EdgeInsets.only(top: 8, bottom: 4, right: 8, left: 8),
+              child: TextFormField(
+                expands: true,
+                maxLines: null,
+                controller: _receivedFrom,
+                style: dataStyle,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+            searchMatchFn: (item, searchValue) {
+              return item.value.toString().contains(searchValue);
+            },
+          ),
+        ),
+      );
+
   Widget buildPayerVatNumber() => Text(
         _transferDate.text,
         style: const TextStyle(
@@ -510,6 +595,7 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
         isLoading = false;
       });
       ZatcaAPI.successMessage("تمت عملية الحفظ بنجاح");
+      Get.to(() => const ReceiptsPg());
     }
   }
 
@@ -529,6 +615,7 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
       bank: _bank.text,
       payTo: receiptType == "قبض" ? "*" : _payTo.text,
       receiptType: receiptType,
+      payerId: payerId,
     );
 
     await FatooraDB.instance.updateReceipt(receipt);
@@ -552,6 +639,7 @@ class _AddEditReceiptPageState extends State<AddEditReceiptPage> {
       bank: _bank.text,
       payTo: receiptType == "قبض" ? "*" : _payTo.text,
       receiptType: receiptType,
+      payerId: payerId,
     );
     await FatooraDB.instance.createReceipt(receipt);
 

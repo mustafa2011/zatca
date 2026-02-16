@@ -1,9 +1,12 @@
 import 'dart:io';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart';
+
 import '../models/estimate.dart';
 import '../models/invoice.dart';
 import '../models/po.dart';
+import '../models/purchase.dart';
 import '../models/receipt.dart';
 
 class PdfApi {
@@ -54,6 +57,21 @@ class PdfApi {
       {required Receipt receipt, required Document pdf}) async {
     final bytes = await pdf.save();
     String name = 'RECEIPT.pdf'; // 'RST-${receipt.id}.pdf';
+    File file;
+    Directory? docDir = await getApplicationDocumentsDirectory();
+    try {
+      file = File('${docDir.path}/$name');
+      await file.writeAsBytes(bytes);
+    } on Exception catch (e) {
+      throw Exception(e);
+    }
+    return file;
+  }
+
+  static Future<File> previewPurchase(
+      {required Purchase purchase, required Document pdf}) async {
+    final bytes = await pdf.save();
+    String name = 'PURCHASE.pdf'; // 'RST-${receipt.id}.pdf';
     File file;
     Directory? docDir = await getApplicationDocumentsDirectory();
     try {

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:zatca/helpers/fatoora_db.dart';
 
 import '../helpers/zatca_api.dart';
+import '../main.dart';
 import '../models/customers.dart';
 import '../models/invoice.dart';
 import '../pdf/pdf_invoice_api.dart';
@@ -27,6 +28,7 @@ class _InvoicesPgState extends State<InvoicesPg> {
   List<Invoice> globalInvoices = [];
   List<Customer> globalCustomers = [];
   FatooraDB db = FatooraDB.instance;
+  bool isLoading = false;
 
   String getCustomerNameById(int customerId) {
     var customer =
@@ -163,7 +165,7 @@ class _InvoicesPgState extends State<InvoicesPg> {
                                                   ? Icons.check
                                                   : Icons.cancel,
                                               color: Colors.red),
-                                          onPressed: () async {
+                                          /*onPressed: () async {
                                             try {
                                               final result = await ZatcaAPI.sendCreditNote(
                                                   sale.isCredit == 1
@@ -185,6 +187,73 @@ class _InvoicesPgState extends State<InvoicesPg> {
                                             // if (result == true) {
                                             //   _loadData(); // Refresh data if result indicates update
                                             // }
+                                          },*/
+                                          onPressed: () async {
+                                            if (isLoading) return;
+
+                                            if (sale.isCredit == 1) {
+                                              ZatcaAPI.errorMessage(
+                                                  "هذه الفاتورة ملغاة وتم ارتجاعها بالكامل");
+                                              return;
+                                            }
+
+                                            final context =
+                                                navKey.currentContext;
+                                            if (context == null) return;
+
+                                            final confirm =
+                                                await showDialog<bool>(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (context) => AlertDialog(
+                                                title: const Text('تأكيد',
+                                                    textAlign:
+                                                        TextAlign.center),
+                                                content: const Text(
+                                                  'هل تريد بالفعل الغاء الفاتورة\nوارسال اشعار دائن لهيئة الزكاة؟',
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            context, true),
+                                                    child: const Text('نعم'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            context, false),
+                                                    child: const Text('لا'),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirm != true) {
+                                              return; // ❌ user cancelled
+                                            }
+
+                                            final api = ZatcaAPI();
+
+                                            setState(() => isLoading = true);
+
+                                            final result =
+                                                await api.processInvoice(
+                                              sale,
+                                              isCredit: true,
+                                            );
+
+                                            setState(() => isLoading = false);
+
+                                            if (result.ok) {
+                                              await _loadData();
+                                              ZatcaAPI.successMessage(
+                                                  result.message);
+                                            } else {
+                                              ZatcaAPI.errorMessage(
+                                                  result.message);
+                                            }
                                           },
                                         )
                                       : IconButton(

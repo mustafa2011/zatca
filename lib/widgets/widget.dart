@@ -147,14 +147,8 @@ class NewForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery
-        .of(context)
-        .size
-        .width;
-    final height = MediaQuery
-        .of(context)
-        .size
-        .height;
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Container(
@@ -177,8 +171,7 @@ class NewForm extends StatelessWidget {
     );
   }
 
-  Widget titleBar(double width) =>
-      Container(
+  Widget titleBar(double width) => Container(
         width: width,
         height: 150,
         padding: const EdgeInsets.only(left: 10, right: 10, bottom: 100),
@@ -209,32 +202,30 @@ class NewForm extends StatelessWidget {
         ),
       );
 
-  Widget bottomBar(double width) =>
-      Positioned(
-          left: 0,
-          bottom: 0,
-          child: Container(
-              width: width,
-              height: 70,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(0),
-                color: Utils.background,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  actionBar(width),
-                  NewButton(
-                    icon: Icons.home,
-                    iconSize: 25,
-                    onTap: () => Get.to(() => const HomePage()),
-                  )
-                ],
-              )));
+  Widget bottomBar(double width) => Positioned(
+      left: 0,
+      bottom: 0,
+      child: Container(
+          width: width,
+          height: 70,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(0),
+            color: Utils.background,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              actionBar(width),
+              NewButton(
+                icon: Icons.home,
+                iconSize: 25,
+                onTap: () => Get.to(() => const HomePage()),
+              )
+            ],
+          )));
 
-  Widget actionBar(double width) =>
-      SizedBox(
+  Widget actionBar(double width) => SizedBox(
         width: width - 70,
         child: ListView(
           scrollDirection: Axis.horizontal,
@@ -248,8 +239,7 @@ class NewForm extends StatelessWidget {
         ),
       );
 
-  Widget tabBar(double width) =>
-      Positioned(
+  Widget tabBar(double width) => Positioned(
         right: 10,
         top: 57,
         child: SizedBox(
@@ -259,8 +249,7 @@ class NewForm extends StatelessWidget {
         ),
       );
 
-  Widget body(double width, double height) =>
-      Positioned(
+  Widget body(double width, double height) => Positioned(
         top: 105,
         child: SingleChildScrollView(
           child: Container(
@@ -393,7 +382,7 @@ class MyTextFormField extends StatelessWidget {
           labelText: labelText,
           isDense: true,
           contentPadding:
-          const EdgeInsets.symmetric(vertical: 22.0, horizontal: 10.0),
+              const EdgeInsets.symmetric(vertical: 22.0, horizontal: 10.0),
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20.0),
@@ -407,13 +396,13 @@ class MyTextFormField extends StatelessWidget {
         onTap: onTap,
         validator: isMandatory
             ? (value) {
-          if (value == null || value.isEmpty) {
-            return 'يجب ادخال $labelText';
-          } else if (pattern != null && !pattern!.hasMatch(value)) {
-            return errorMessage ?? '$labelText غير صحيح';
-          }
-          return null;
-        }
+                if (value == null || value.isEmpty) {
+                  return 'يجب ادخال $labelText';
+                } else if (pattern != null && !pattern!.hasMatch(value)) {
+                  return errorMessage ?? '$labelText غير صحيح';
+                }
+                return null;
+              }
             : null,
         keyboardType: keyboardType,
         textAlign: textAlign,
@@ -447,7 +436,7 @@ class CTextField extends StatelessWidget {
         labelText: labelText,
         isDense: true,
         contentPadding:
-        const EdgeInsets.symmetric(vertical: 11.0, horizontal: 10.0),
+            const EdgeInsets.symmetric(vertical: 11.0, horizontal: 10.0),
         border: const OutlineInputBorder(
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20.0),
@@ -458,22 +447,22 @@ class CTextField extends StatelessWidget {
       ),
       validator: isMandatory
           ? (value) {
-        if (value!.isEmpty) {
-          return 'يجب ادخال بيانات هذا الحقل';
-        } else {
-          if (pattern != null && !pattern!.hasMatch(value)) {
-            return errorMessage ?? 'يجب ادخال رقم جوال صحيح';
-          }
-        }
-        return null;
-      }
+              if (value!.isEmpty) {
+                return 'يجب ادخال بيانات هذا الحقل';
+              } else {
+                if (pattern != null && !pattern!.hasMatch(value)) {
+                  return errorMessage ?? 'يجب ادخال رقم جوال صحيح';
+                }
+              }
+              return null;
+            }
           : null,
     );
   }
 }
 
 const TextStyle dataStyle =
-TextStyle(color: Utils.primary, fontSize: 14, fontWeight: FontWeight.bold);
+    TextStyle(color: Utils.primary, fontSize: 14, fontWeight: FontWeight.bold);
 
 const TextStyle menuStyle = TextStyle(
     color: Utils.secondary, fontSize: 18, fontWeight: FontWeight.bold);
@@ -484,7 +473,7 @@ const TextStyle whiteLargeTextStyle = TextStyle(
 const TextStyle whiteTextStyle = TextStyle(color: Color(0xFFFFFFFF));
 
 TextButton textButton(Function(Key? key) onPressed,
-    {String? line1, String? line2}) =>
+        {String? line1, String? line2}) =>
     TextButton(
         onPressed: () {
           onPressed;
@@ -520,12 +509,13 @@ class MyTextButton extends StatelessWidget {
   final double width;
   final double height;
 
-  const MyTextButton({super.key,
-    this.onPressed,
-    this.line1,
-    this.line2 = "",
-    this.width = 110.0,
-    this.height = 40.0});
+  const MyTextButton(
+      {super.key,
+      this.onPressed,
+      this.line1,
+      this.line2 = "",
+      this.width = 110.0,
+      this.height = 30.0});
 
   @override
   Widget build(BuildContext context) {
@@ -544,11 +534,11 @@ class MyTextButton extends StatelessWidget {
           child: line2 == ""
               ? Center(child: Text(line1!, style: whiteLargeTextStyle))
               : Column(
-            children: [
-              Text(line1!, style: whiteLargeTextStyle),
-              Text(line2, style: whiteTextStyle),
-            ],
-          ),
+                  children: [
+                    Text(line1!, style: whiteLargeTextStyle),
+                    Text(line2, style: whiteTextStyle),
+                  ],
+                ),
         ));
   }
 }

@@ -14,6 +14,7 @@ class ReceiptFields {
   static const String transferDate = 'transferDate';
   static const String bank = 'bank';
   static const String payTo = 'payTo';
+  static const String payerId = 'payerId';
   static const String receiptType = 'receiptType';
 
   static List<String> getReceiptFields() => [
@@ -30,6 +31,7 @@ class ReceiptFields {
         transferDate,
         bank,
         payTo,
+        payerId,
         receiptType
       ];
 }
@@ -48,6 +50,7 @@ class Receipt {
   final String transferDate;
   final String bank;
   final String payTo;
+  final int payerId;
   final String receiptType;
 
   Receipt({
@@ -64,6 +67,7 @@ class Receipt {
     this.transferDate = '',
     this.bank = '',
     this.payTo = '',
+    this.payerId = 0,
     this.receiptType = '',
   });
 
@@ -81,6 +85,7 @@ class Receipt {
     String? transferDate,
     String? bank,
     String? payTo,
+    int? payerId,
     String? receiptType,
   }) =>
       Receipt(
@@ -96,7 +101,8 @@ class Receipt {
         transferNo: transferNo ?? this.transferNo,
         transferDate: transferDate ?? this.transferDate,
         bank: bank ?? this.bank,
-        payTo: bank ?? this.payTo,
+        payTo: payTo ?? this.payTo,
+        payerId: payerId ?? this.payerId,
         receiptType: bank ?? this.receiptType,
       );
 
@@ -115,9 +121,11 @@ class Receipt {
       transferDate: json[ReceiptFields.transferDate] as String,
       bank: json[ReceiptFields.bank] as String,
       payTo: json[ReceiptFields.payTo] as String,
+      payerId: json[ReceiptFields.payerId] as int,
       receiptType: json[ReceiptFields.receiptType] as String,
     );
   }
+
   Map<String, dynamic> toJson() => {
         ReceiptFields.id: id,
         ReceiptFields.date: date,
@@ -132,8 +140,10 @@ class Receipt {
         ReceiptFields.transferDate: transferDate,
         ReceiptFields.bank: bank,
         ReceiptFields.payTo: payTo,
+        ReceiptFields.payerId: payerId,
         ReceiptFields.receiptType: receiptType,
       };
+
   String toParams() => "?id=$id"
       "&date=$date"
       "&receivedFrom=$receivedFrom"
@@ -147,5 +157,6 @@ class Receipt {
       "&transferDate=$transferDate"
       "&bank=$bank"
       "&payTo=$payTo"
+      "&payerId=$payerId"
       "&receiptType=$receiptType";
 }

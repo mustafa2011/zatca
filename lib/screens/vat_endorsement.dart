@@ -214,6 +214,7 @@ class _VatEndorsementPageState extends State<VatEndorsementPage> {
               },
               dropdownStyleData: DropdownStyleData(
                 maxHeight: 250,
+                width: 200,
                 offset: const Offset(0, 0),
                 scrollbarTheme: ScrollbarThemeData(
                   radius: const Radius.circular(40),

@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../helpers/fatoora_db.dart';
 import '../helpers/utils.dart';
+import '../models/customers.dart';
 import '../pdf/pdf_reports.dart';
 import '../pdf/pdf_screen.dart';
 import '../screens/home.dart';
@@ -33,6 +34,9 @@ class _ReportsPageState extends State<ReportsPage> {
   DateTime now = DateTime.now();
   String pdfPath = "";
   bool isLoading = false;
+  final TextEditingController _payer = TextEditingController();
+  int payerId = 0;
+  late List<String> customers = [];
 
   @override
   void initState() {
@@ -44,6 +48,15 @@ class _ReportsPageState extends State<ReportsPage> {
     final pdfDir = await getApplicationDocumentsDirectory();
     pdfPath = "${pdfDir.path}/REPORT.pdf";
     language = "Arabic";
+    List<Customer> list = await db.getAllCustomers();
+    if (list.isEmpty) {
+      await db.createCustomer(
+          const Customer(name: 'عميل نقدي', vatNumber: '000000000000000'));
+    }
+    customers.clear();
+    for (int i = 0; i < list.length; i++) {
+      customers.add("${list[i].id}-${list[i].name}");
+    }
     setState(() {
       _dateFrom.text = Utils.formatShortDate(DateTime(yy, mm, dd - 1));
       _dateTo.text = Utils.formatShortDate(DateTime(yy, mm, dd - 1));
@@ -101,6 +114,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     'تقرير مبيعات اليوم',
                     'تقرير مبيعات فترة',
                     'تقرير مشتريات فترة',
+                    'كشف حساب عميل',
                   ]
                       .map((String item) => DropdownMenuItem<String>(
                             value: item,
@@ -126,6 +140,87 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                 ),
                 Utils.space(1, 0),
+                reportName == 'كشف حساب عميل'
+                    ? Container(
+                        padding: const EdgeInsets.only(top: 10, bottom: 10),
+                        // margin: const EdgeInsets.only(left: 5, right: 5),
+                        child: DropdownButtonFormField2<String>(
+                          isExpanded: true,
+                          iconStyleData: const IconStyleData(
+                              iconSize: 30,
+                              icon: Icon(
+                                Icons.keyboard_arrow_down,
+                              )),
+                          decoration: const InputDecoration(
+                            labelText: 'اختر العميل',
+                            labelStyle: TextStyle(fontSize: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20.0),
+                                topRight: Radius.circular(20.0),
+                              ),
+                            ),
+                          ),
+                          hint: Text(_payer.text, style: dataStyle),
+                          items: customers
+                              .map((String item) => DropdownMenuItem<String>(
+                                    value: item,
+                                    child: Text(
+                                      item.split('-')[1],
+                                      style: dataStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (String? value) {
+                            String customerName = value!.split('-')[1];
+                            setState(() {
+                              payerId = int.parse(value.split('-')[0]);
+                              _payer.text = customerName;
+                            });
+                          },
+                          dropdownStyleData: const DropdownStyleData(
+                            maxHeight: 250,
+                            offset: Offset(0, 0),
+                            scrollbarTheme:
+                                ScrollbarThemeData(radius: Radius.circular(40)),
+                          ),
+                          menuItemStyleData: const MenuItemStyleData(
+                            height: 40,
+                            padding: EdgeInsets.only(left: 14, right: 14),
+                          ),
+                          dropdownSearchData: DropdownSearchData(
+                            searchController: _payer,
+                            searchInnerWidgetHeight: 50,
+                            searchInnerWidget: Container(
+                              height: 50,
+                              padding: const EdgeInsets.only(
+                                  top: 8, bottom: 4, right: 8, left: 8),
+                              child: TextFormField(
+                                expands: true,
+                                maxLines: null,
+                                controller: _payer,
+                                style: dataStyle,
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ),
+                            searchMatchFn: (item, searchValue) {
+                              return item.value
+                                  .toString()
+                                  .contains(searchValue);
+                            },
+                          ),
+                        ),
+                      )
+                    : Container(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -147,18 +242,30 @@ class _ReportsPageState extends State<ReportsPage> {
                     String d1 = _dateFrom.text;
                     String d2 = _dateTo.text;
                     setState(() => isLoading = true);
-                    final pdf = await PdfReport.generateDailyReport(
-                        reportTitle: reportName,
-                        dateFrom: d1,
-                        dateTo: reportName == 'تقرير مبيعات اليوم' ? d1 : d2,
-                        invoices: reportName == 'تقرير مبيعات اليوم'
-                            ? await FatooraDB.instance
-                                .getAllInvoicesBetweenTwoDates(d1, d1)
-                            : await FatooraDB.instance
-                                .getAllInvoicesBetweenTwoDates(d1, d2),
-                        purchases: await FatooraDB.instance
-                            .getAllPurchasesBetweenTwoDates(d1, d2),
-                        isDemo: isDemo);
+                    final statementData = await FatooraDB.instance
+                        .getCustomerStatement(payerId, d1, d2);
+
+                    final pdf = reportName == "كشف حساب عميل"
+                        ? await PdfReport.generateCustomerStatementReport(
+                            reportTitle: "كشف حساب عميل\n${_payer.text}",
+                            dateFrom: d1,
+                            dateTo: d2,
+                            data: statementData,
+                            isDemo: isDemo)
+                        : await PdfReport.generateDailyReport(
+                            reportTitle: reportName,
+                            dateFrom: d1,
+                            dateTo:
+                                reportName == 'تقرير مبيعات اليوم' ? d1 : d2,
+                            invoices: reportName == 'تقرير مبيعات اليوم'
+                                ? await FatooraDB.instance
+                                    .getAllInvoicesBetweenTwoDates(d1, d1)
+                                : await FatooraDB.instance
+                                    .getAllInvoicesBetweenTwoDates(d1, d2),
+                            purchases: await FatooraDB.instance
+                                .getAllPurchasesBetweenTwoDates(d1, d2),
+                            isDemo: isDemo);
+
                     Get.to(() => ShowPDF(pdf: pdf, title: 'تقرير'));
                     setState(() => isLoading = false);
                   },

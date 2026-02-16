@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../widgets/widget.dart';
 
 class CustomerFormWidget extends StatelessWidget {
@@ -167,6 +168,7 @@ class CustomerFormWidget extends StatelessWidget {
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         initialValue: vatNumber.toString(),
         labelText: 'الرقم الضريبي',
+        pattern: RegExp(r'^(3)([0-9]{10})(0003)$'),
         isMandatory: true,
         textDirection: TextDirection.ltr,
         onChanged: (vatNumber) => onChangedVatNumber(vatNumber),

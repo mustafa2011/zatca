@@ -101,6 +101,209 @@ class PdfReport {
         pdf: pdf);
   }
 
+  static Future<File> generateCustomerStatementReport(
+      {required List<Map<String, dynamic>> data,
+      required String reportTitle,
+      required String dateFrom,
+      required String dateTo,
+      required bool isDemo}) async {
+    var myTheme = ThemeData.withFont(
+      base: Font.ttf(await rootBundle.load(tahoma)),
+      bold: Font.ttf(await rootBundle.load(notoBold)),
+    );
+    final pdf = Document(theme: myTheme);
+    pdf.addPage(MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      build: (context) => [
+        // buildTitle(reportTitle, dateFrom, dateTo),
+
+        buildBody1(data, dateFrom, dateTo, reportTitle),
+        Divider(),
+        buildTotal1(data),
+      ],
+      header: (context) => Column(children: [
+        buildTitle(reportTitle, dateFrom, dateTo),
+        Divider(),
+      ]),
+      footer: (context) {
+        return isDemo
+            ? Column(children: [
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  UrlLink(
+                      destination:
+                          'https://wa.me/${Utils.defFullSupportNumber}',
+                      child: Row(children: [
+                        Text("ارسل رسالة واتساب للدعم الفني",
+                            textDirection: TextDirection.rtl,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                decoration: TextDecoration.underline,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: PdfColors.blue))
+                      ])),
+                  SizedBox(width: 5),
+                  Text("نسخة تجريبية",
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: PdfColors.red)),
+                ]),
+                UrlLink(
+                    destination: 'https://wa.me/${Utils.defFullSupportNumber}',
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(Utils.defSupportNumber,
+                              textDirection: TextDirection.rtl,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: PdfColors.blue)),
+                          SizedBox(width: 5),
+                          Text("رقم الدعم الفني",
+                              textDirection: TextDirection.rtl,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: PdfColors.blue))
+                        ])),
+              ])
+            : Container(
+                alignment: Alignment.center,
+                child: Text("صفحة ${context.pagesCount}/${context.pageNumber}",
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: PdfColors.black)));
+      },
+    ));
+
+    return await PdfApi.savePreviewDailyReport(
+        name: '$reportTitle[${Utils.formatShortDate(DateTime.now())}].pdf',
+        pdf: pdf);
+  }
+
+  static Widget buildBody1(List<Map<String, dynamic>> data, String dateFrom,
+      String dateTo, String reportTitle) {
+    int length = data.length;
+    return Container(
+      child: Column(children: [
+        Container(
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+              Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                Container(
+                  width: 75,
+                  child: buildNormalText(
+                      text: 'عليه', fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 1),
+                Container(
+                  width: 75,
+                  child:
+                      buildNormalText(text: 'له', fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 1),
+                Container(
+                  width: 235,
+                  child: buildNormalText(
+                      text: 'الشرح', fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 1),
+              ]),
+              Container(
+                width: 70,
+                child: buildNormalText(
+                    text: 'التاريخ', fontWeight: FontWeight.bold),
+              ),
+            ])),
+        Divider(),
+        for (int index = 0; index < length; index++)
+          Container(
+              height: 30,
+              color: index % 2 == 1 ? PdfColors.grey100 : PdfColors.white,
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                      Container(
+                        width: 75,
+                        child: buildNormalText(
+                            text: Utils.formatNoCurrency(data[index]['debit'])),
+                      ),
+                      SizedBox(width: 1),
+                      Container(
+                        width: 75,
+                        child: buildNormalText(
+                            text:
+                                Utils.formatNoCurrency(data[index]['credit'])),
+                      ),
+                      SizedBox(width: 1),
+                      Container(
+                        width: 235,
+                        child:
+                            buildNormalText(text: data[index]['description']),
+                      ),
+                    ]),
+                    Container(
+                      width: 70,
+                      child: buildNormalText(
+                          text: data[index]['date'].substring(0, 10)),
+                    ),
+                  ])),
+      ]),
+    );
+  }
+
+  static Widget buildTotal1(List<Map<String, dynamic>> data) {
+    if (data.isEmpty) {
+      return buildNormalText(
+        text: '0',
+        fontWeight: FontWeight.bold,
+      );
+    }
+
+    final double finalBalance = (data.last['balance'] as num).toDouble();
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 75,
+              child: buildNormalText(
+                text: Utils.formatNoCurrency(
+                    finalBalance < 0 ? -finalBalance : finalBalance),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 2),
+            SizedBox(
+              width: 75,
+              child: buildNormalText(
+                text: finalBalance > 0
+                    ? 'الرصيد عليه'
+                    : finalBalance < 0
+                        ? 'الرصيد له'
+                        : 'الرصيد',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   static Widget buildTitle(
           String reportTitle, String dateFrom, String dateTo) =>
       Center(
@@ -111,15 +314,11 @@ class PdfReport {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           dateFrom == dateTo
               ? Text(dateFrom)
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                      Text(" "),
-                      Text(dateTo),
-                      Text(":"),
-                      Text(dateFrom),
-                      Text(" "),
-                    ]),
+              : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text(dateTo),
+                  Text(" : "),
+                  Text(dateFrom),
+                ]),
         ]),
       );
 

@@ -16,6 +16,7 @@ import '../models/product.dart';
 import '../models/settings.dart';
 import '../pdf/pdf_estimate_api.dart';
 import '../widgets/widget.dart';
+import 'estimates.dart';
 
 const fontStyle =
     TextStyle(color: Utils.primary, fontWeight: FontWeight.bold, fontSize: 12);
@@ -1034,6 +1035,7 @@ class _AddEditEstimatePageState extends State<AddEditEstimatePage> {
         isLoading = false;
       });
       ZatcaAPI.successMessage("تمت عملية الحفظ بنجاح");
+      Get.to(() => const EstimatesPg());
     }
   }
 

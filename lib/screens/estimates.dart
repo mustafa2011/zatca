@@ -3,11 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:zatca/screens/sales.dart';
 
 import '../helpers/fatoora_db.dart';
+import '../helpers/utils.dart';
 import '../helpers/zatca_api.dart';
 import '../models/customers.dart';
 import '../models/estimate.dart';
+import '../models/invoice.dart';
 import '../pdf/pdf_estimate_api.dart';
 import '../pdf/pdf_screen.dart';
 import '../screens/edit_estimate_page.dart';
@@ -149,6 +152,12 @@ class _EstimatesPgState extends State<EstimatesPg> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
+                                    icon: Icon(Icons.add_box),
+                                    onPressed: () async {
+                                      _generateInvoice(context, index);
+                                    },
+                                  ),
+                                  IconButton(
                                     icon: Icon(Icons.picture_as_pdf),
                                     onPressed: () async {
                                       _generatePdf(context, index);
@@ -280,6 +289,77 @@ class _EstimatesPgState extends State<EstimatesPg> {
                         pdf: pdf,
                         title: 'عرض سعر',
                       ));
+                }
+              }
+            });
+
+            return AlertDialog(
+              content: Row(
+                children: const [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Text("فضلا انتظر لحظات ..."),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _generateInvoice(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            Future.microtask(() async {
+              try {
+                final inv = _filteredEstimates[index];
+                final items =
+                    await FatooraDB.instance.getEstimateLinesById(inv.id!);
+                final newInvId =
+                    (await FatooraDB.instance.getNewInvoiceId())! + 1;
+
+                Invoice invoice = Invoice(
+                  id: newInvId,
+                  invoiceNo: '${Utils.clientId}-$newInvId',
+                  date: inv.date,
+                  supplyDate: inv.date,
+                  sellerId: Utils.clientId,
+                  project: inv.project,
+                  total: inv.total,
+                  totalVat: inv.totalVat,
+                  posted: 0,
+                  payerId: inv.payerId,
+                  noOfLines: items.length,
+                  paymentMethod: inv.paymentMethod,
+                );
+                await FatooraDB.instance.createInvoice(invoice);
+                List<InvoiceLines> invoiceLines = [];
+                InvoiceLines invoiceLine;
+
+                for (int i = 0; i < items.length; i++) {
+                  invoiceLines.add(InvoiceLines(
+                      recId: newInvId,
+                      productName: items[i].productName,
+                      price: items[i].price,
+                      qty: items[i].qty));
+
+                  invoiceLine = invoiceLines[i];
+
+                  await FatooraDB.instance
+                      .createInvoiceLines(invoiceLine, newInvId);
+                }
+              } catch (e) {
+                if (context.mounted) Navigator.pop(context);
+                ZatcaAPI.errorMessage(e.toString());
+              } finally {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Get.to(() => InvoicesPg());
                 }
               }
             });

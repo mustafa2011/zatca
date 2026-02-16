@@ -69,6 +69,7 @@ class _LoginPageState extends State<LoginPage> {
     Utils.logoWidth = prefs.getInt('logoWidth') ?? 75;
     Utils.logoHeight = prefs.getInt('logoHeight') ?? 75;
     Utils.terms = prefs.getString('terms') ?? '';
+    Utils.showAllData = prefs.getInt('showAllData') ?? 1;
 
     if (Utils.clientId != 0) {
       Get.to(() => const HomePage());
@@ -97,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     try {
-      final url = Uri.parse('https://alwadeh.net/api/sahab/settings.php');
+      final url = Uri.parse('$alwadehApiUrl/settings.php');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -131,6 +132,7 @@ class _LoginPageState extends State<LoginPage> {
             await prefs.setString('device', data['device'] ?? '');
             await prefs.setString('logo', data['logo'] ?? '');
             await prefs.setString('terms', data['terms'] ?? '');
+            // await prefs.setInt('showAllData', data['showAllData'] ?? 0);
             await prefs.setInt('logoWidth', data['logoWidth'] ?? 75);
             await prefs.setInt('logoHeight', data['logoHeight'] ?? 75);
             await prefs.setString(

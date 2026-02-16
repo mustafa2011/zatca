@@ -21,6 +21,7 @@ import '../screens/settings_page.dart';
 import '../screens/suppliers.dart';
 import '../screens/vat_endorsement.dart';
 import '../widgets/widget.dart';
+import 'contracts.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -213,12 +214,13 @@ class _HomePageState extends State<HomePage> {
                   : Container(),
               Utils.device == "Mobile" ? Utils.space(2, 0) : Container(),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   MyTextButton(
                     onPressed: () => Get.to(() => const VatEndorsementPage()),
                     line1: "الإقرار الضريبي",
                   ),
+                  Utils.space(0, 3),
                   MyTextButton(
                     onPressed: () => Get.to(() => const ReportsPage()),
                     line1: "التقارير",
@@ -227,69 +229,76 @@ class _HomePageState extends State<HomePage> {
               ),
               Utils.space(2, 0),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   MyTextButton(
                     onPressed: () => Get.to(() => const CustomersPg()),
                     line1: "العملاء",
-                    // line2: "$customersCount",
                   ),
+                  Utils.space(0, 3),
                   MyTextButton(
                     onPressed: () => Get.to(() => const SuppliersPg()),
                     line1: "الموردين",
-                    // line2: "$supplierCount",
                   ),
                 ],
               ),
               Utils.space(2, 0),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   MyTextButton(
                     onPressed: () => Get.to(() => const ProductsPg()),
                     line1: "المنتجات",
-                    // line2: "$productsCount",
                   ),
+                  Utils.space(0, 3),
                   // المبيعات
                   MyTextButton(
                     onPressed: () => Get.to(() => const InvoicesPg()),
                     line1: "المبيعات",
-                    // line2: "${Utils.formatNoCurrency(totalSales)}",
                   ),
                 ],
               ),
               Utils.space(2, 0),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // المشتريات
                   MyTextButton(
                     onPressed: () => Get.to(() => const PurchasesPg()),
                     line1: "المشتريات",
-                    // line2: "${Utils.formatNoCurrency(totalPurchases)}",
                   ),
+                  Utils.space(0, 3),
                   // عروض الأسعار
                   MyTextButton(
                     onPressed: () => Get.to(() => const EstimatesPg()),
                     line1: "عروض الأسعار",
-                    // line2: "${Utils.formatNoCurrency(totalEstimates)}",
                   ),
                 ],
               ),
               Utils.space(2, 0),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // السندات
                   MyTextButton(
                     onPressed: () => Get.to(() => const ReceiptsPg()),
                     line1: "السندات",
-                    // line2: "${Utils.formatNoCurrency(receiptsCount)}",
                   ),
+                  Utils.space(0, 3),
                   MyTextButton(
                     onPressed: () => Get.to(() => const PosPg()),
                     line1: "طلبات الشراء",
-                    // line2: "${Utils.formatNoCurrency(totalPo)}",
+                  ),
+                ],
+              ),
+              Utils.space(2, 0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // العقود
+                  MyTextButton(
+                    onPressed: () => Get.to(() => const ContractsPg()),
+                    line1: "العقود",
                   ),
                 ],
               ),

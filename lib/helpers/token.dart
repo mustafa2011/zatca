@@ -4,29 +4,23 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import '../helpers/utils.dart';
-import '../helpers/zatca_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/utils.dart';
+import '../helpers/zatca_api.dart';
 import '../screens/login.dart';
 
 class Token {
-  static const String issueTokenUrl =
-      'https://alwadeh.net/api/sahab/issue_token.php';
-  static const String validateTokenUrl =
-      'https://alwadeh.net/api/sahab/validate_token.php';
-  static const _tokenKey = 'token';
-
   /// Get token from SharedPreferences
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    return prefs.getString(tokenKey);
   }
 
   /// Save token to SharedPreferences
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await prefs.setString(tokenKey, token);
   }
 
   /// Validate token via API
@@ -49,19 +43,23 @@ class Token {
 
   /// Request and store a new token
   Future<String?> issueNewToken() async {
-    String contact = Utils.contactNumber;
-    final response = await http.post(
-      Uri.parse(issueTokenUrl),
-      body: {
-        'contact_number': contact,
-        'password': 'admin',
-      },
-    );
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final token = data['token'];
-      await saveToken(token);
-      return token;
+    try {
+      String contact = Utils.contactNumber;
+      final response = await http.post(
+        Uri.parse(issueTokenUrl),
+        body: {
+          'contact_number': contact,
+          'password': 'admin',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final token = data['token'];
+        await saveToken(token);
+        return token;
+      }
+    } on Exception catch (e) {
+      throw Exception(e);
     }
 
     return null;
@@ -78,7 +76,7 @@ class Token {
   /// 🔒 Logout: clear token and restart app
   Future<void> logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
-    // await prefs.remove(_tokenKey);
+    // await prefs.remove(tokenKey);
     await prefs.clear();
 
     Get.to(() => const LoginPage());
@@ -86,7 +84,7 @@ class Token {
 
   Future<String> getTokenInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
+    final token = prefs.getString(tokenKey);
 
     if (token == null || token.isEmpty) {
       return "No token found.";
@@ -115,7 +113,7 @@ class Token {
   Future<bool> loginAndGetToken(
       String username, String password, String clientId) async {
     final response = await http.post(
-      Uri.parse('https://alwadeh.net/api/sahab/login.php'),
+      Uri.parse('$alwadehApiUrl/login.php'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': username,

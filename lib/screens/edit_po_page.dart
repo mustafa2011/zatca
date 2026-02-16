@@ -5,6 +5,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:zatca/screens/pos.dart';
 
 import '../helpers/fatoora_db.dart';
 import '../helpers/utils.dart';
@@ -682,6 +683,7 @@ class _AddEditPoPageState extends State<AddEditPoPage> {
         isLoading = false;
       });
       ZatcaAPI.successMessage("تمت عملية الحفظ بنجاح");
+      Get.to(() => const PosPg());
     }
   }
 

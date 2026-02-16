@@ -8,6 +8,12 @@ import 'package:number_to_word_arabic/number_to_word_arabic.dart';
 String slash = Platform.isWindows ? "\\" : "/";
 const notoBold = "assets/fonts/NotoKufiArabic-Bold.ttf";
 const tahoma = "assets/fonts/Tahoma.ttf";
+const String alwadehApiUrl = "https://alwadeh.net/api";
+const String issueTokenUrl = '$alwadehApiUrl/issue_token.php';
+const String validateTokenUrl = '$alwadehApiUrl/validate_token.php';
+const String generateInvoiceUrl = "$alwadehApiUrl/GenerateInvoice1.php";
+const String baseUrl = "https://gw-fatoora.zatca.gov.sa/e-invoicing/";
+const String tokenKey = 'token';
 
 class Utils {
   static int clientId = 0;
@@ -31,6 +37,7 @@ class Utils {
   static int logoWidth = 75;
   static int logoHeight = 75;
   static String terms = '';
+  static int showAllData = 1;
 
   static const Color primary = Color(0xFF57007F);
   static const Color secondary = Color(0xFFFF9800);

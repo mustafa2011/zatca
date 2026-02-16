@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +8,8 @@ import '../helpers/fatoora_db.dart';
 import '../helpers/zatca_api.dart';
 import '../models/purchase.dart';
 import '../models/suppliers.dart';
+import '../pdf/pdf_purchase_api.dart';
+import '../pdf/pdf_screen.dart';
 import '../screens/edit_invoice_android_page.dart';
 
 class PurchasesPg extends StatefulWidget {
@@ -145,6 +149,12 @@ class _PurchasesPgState extends State<PurchasesPg> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
+                                    icon: Icon(Icons.picture_as_pdf),
+                                    onPressed: () async {
+                                      _generatePdf(context, index);
+                                    },
+                                  ),
+                                  IconButton(
                                     icon: Icon(Icons.edit),
                                     onPressed: () async {
                                       final result = await Get.to(
@@ -258,6 +268,45 @@ class _PurchasesPgState extends State<PurchasesPg> {
         }).toList();
       }
     });
+  }
+
+  void _generatePdf(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        File? pdf;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            Future.microtask(() async {
+              final inv = _filteredPurchases[index];
+
+              try {
+                pdf = await PdfPurchaseApi.generate(inv, 'فاتورة مشتريات');
+              } catch (e) {
+                // Handle error
+                ZatcaAPI.errorMessage(e.toString());
+              } finally {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Get.to(() => ShowPDF(pdf: pdf, title: 'فاتورة مشتريات'));
+                }
+              }
+            });
+
+            return AlertDialog(
+              content: Row(
+                children: const [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Text("فضلا انتظر لحظات ..."),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<List<Purchase>> fetchPurchases() async {

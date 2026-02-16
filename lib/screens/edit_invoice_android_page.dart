@@ -17,10 +17,13 @@ import 'package:zatca/models/invoice.dart';
 import 'package:zatca/models/product.dart';
 import 'package:zatca/models/purchase.dart';
 import 'package:zatca/models/settings.dart';
+import 'package:zatca/screens/purchases.dart';
 import 'package:zatca/screens/qr_scanner.dart';
+import 'package:zatca/screens/sales.dart';
 
 import '../helpers/utils.dart';
 import '../helpers/zatca_api.dart';
+import '../main.dart';
 import '../models/suppliers.dart';
 import '../pdf/pdf_invoice_api.dart';
 import '../pdf/pdf_receipt.dart';
@@ -188,6 +191,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
         }
       } else if (widget.purchase != null) {
         curSupplierId = int.parse(widget.purchase!.vendor);
+        selectedPayMethod = widget.purchase!.paymentMethod;
       }
 
       id = widget.isPurchases == true
@@ -221,6 +225,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
           _totalPurchases.text = '';
           _vatPurchases.text = '';
           _details.text = '';
+          _payMethod.text = selectedPayMethod;
         } else {
           Purchase purchase = await FatooraDB.instance.getPurchaseById(id);
           _vendor.text = supplier.name; // purchase.vendor;
@@ -230,6 +235,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
           _totalPurchases.text = Utils.formatNoCurrency(purchase.total);
           _vatPurchases.text = Utils.formatNoCurrency(purchase.totalVat);
           _details.text = purchase.details;
+          _payMethod.text = purchase.paymentMethod;
         }
       }
 
@@ -421,15 +427,16 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
                         : Container() // for other devices give blank
                     : Row(
                         children: [
-                          IconButton(
+                          /*IconButton(
                             onPressed: () async {
                               // handel sending to zatca api
                               FatooraDB db = FatooraDB.instance;
-                              ZatcaAPI zatca = ZatcaAPI.instance;
+                              final api = ZatcaAPI();
+                              // ZatcaAPI zatca = ZatcaAPI.instance;
                               final invoice = await db.getInvoiceById(recId);
                               setState(() => isLoading = true);
-                              final result =
-                                  await zatca.generateInvoice(invoice);
+                              final result = await api.processInvoice(invoice);
+                              // final result = await api.generateInvoice(invoice);
                               setState(() => isLoading = false);
                               if (result) {
                                 setState(() => isApprovedByZatca = true);
@@ -437,6 +444,61 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
                             },
                             tooltip: 'ارسال الى هيئة الزكاة',
                             icon: const Icon(Icons.cloud_upload, size: 35),
+                          ),*/
+                          IconButton(
+                            tooltip: 'ارسال الى هيئة الزكاة',
+                            icon: const Icon(Icons.cloud_upload, size: 35),
+                            onPressed: () async {
+                              if (isLoading) return;
+
+                              final context = navKey.currentContext;
+                              if (context == null) return;
+
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('تأكيد',
+                                      textAlign: TextAlign.center),
+                                  content: const Text(
+                                    'هل تريد بالفعل ارسال الفاتورة لهيئة الزكاة؟',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text('نعم'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('لا'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm != true) return; // ❌ User cancelled
+
+                              final db = FatooraDB.instance;
+                              final api = ZatcaAPI();
+
+                              final invoice = await db.getInvoiceById(recId);
+
+                              setState(() => isLoading = true);
+
+                              final result = await api.processInvoice(invoice);
+
+                              setState(() => isLoading = false);
+
+                              if (result.ok) {
+                                setState(() => isApprovedByZatca = true);
+                                ZatcaAPI.successMessage(result.message);
+                              } else {
+                                ZatcaAPI.errorMessage(result.message);
+                              }
+                            },
                           ),
                           IconButton(
                             onPressed: () {
@@ -1103,6 +1165,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
                                   Expanded(child: buildVatPurchases()),
                                 ],
                               ),
+                              buildPayMethod(),
                               buildDetails(),
                               const SizedBox(height: 10),
                               ElevatedButton(
@@ -1495,6 +1558,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
         });
         ZatcaAPI.successMessage("تم حفظ الفاتورة");
       }
+      Get.to(() => const InvoicesPg());
     } else {
       final isValid = _key2.currentState!.validate();
       if (isValid) {
@@ -1513,8 +1577,8 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
         });
         ZatcaAPI.successMessage("تم حفظ الفاتورة");
       }
+      Get.to(() => const PurchasesPg());
     }
-    //Get.to(() => const InvoicesPage(tabVal: 0));
   }
 
   Future updateInvoice() async {
@@ -1553,6 +1617,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
         totalVat: (num.parse(_totalPurchases.text)) -
             ((num.parse(_totalPurchases.text)) / 1.15),
         details: _details.text,
+        paymentMethod: _payMethod.text,
       );
       await FatooraDB.instance.updatePurchase(purchase);
     }
@@ -1601,7 +1666,6 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
               invoice.project,
               Utils.isProVersion,
               isPreview);
-      // }
     } else {
       final vendorId =
           await FatooraDB.instance.getSupplierIdByName(_vendor.text);
@@ -1613,6 +1677,7 @@ class _AddEditInvoiceAndroidPageState extends State<AddEditInvoiceAndroidPage> {
         totalVat: (num.parse(_totalPurchases.text)) -
             ((num.parse(_totalPurchases.text)) / 1.15),
         details: _details.text,
+        paymentMethod: _payMethod.text,
       );
       await FatooraDB.instance.createPurchase(purchase);
     }

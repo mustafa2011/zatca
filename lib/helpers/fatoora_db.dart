@@ -10,15 +10,14 @@ import 'package:zatca/models/product.dart';
 import 'package:zatca/models/purchase.dart';
 
 import '/models/settings.dart';
+import '../models/contract.dart';
 import '../models/estimate.dart';
 import '../models/po.dart';
 import '../models/receipt.dart';
 import '../models/suppliers.dart';
 import 'utils.dart';
 
-final currentYear = DateTime
-    .now()
-    .year;
+final currentYear = DateTime.now().year;
 final lastFebDay = currentYear % 4 == 0 ? 29 : 28;
 const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
 const intType = 'INTEGER';
@@ -54,7 +53,7 @@ class FatooraDB {
     String dbFilePath = '${appDir.path}${slash}Database$slash$filePath';
     return await databaseFactory.openDatabase(dbFilePath,
         options: OpenDatabaseOptions(
-            version: 11,
+            version: 13,
             onConfigure: onConfigure,
             onCreate: (db, version) async {
               var batch = db.batch();
@@ -103,6 +102,17 @@ class FatooraDB {
                 /// Adding a new column 'notes' to table estimate:
                 _updateToV11(batch);
               }
+              if (oldVersion < 12) {
+                /// add col payerId to table receipts
+                /// add paymentMethod to table purchases
+                /// add new tables: contracts, clauses, clauses_lines
+                _updateToV12(batch);
+              }
+              if (oldVersion < 13) {
+                /// add cols environment, dev_authorization, sim_authorization,
+                /// core_authorization to table receipts
+                _updateToV13(batch);
+              }
               await batch.commit();
             },
             onDowngrade: (db, oldVersion, newVersion) async {
@@ -133,7 +143,7 @@ class FatooraDB {
     final List<Map<String, dynamic>> currentTablesList = await currentDb
         .rawQuery("SELECT name FROM sqlite_master WHERE type='table'");
     final currentTables =
-    currentTablesList.map((e) => e['name'] as String).toSet();
+        currentTablesList.map((e) => e['name'] as String).toSet();
 
     // Only validate that all required tables are in the new DB
     for (var table in currentTables) {
@@ -284,6 +294,8 @@ CREATE TABLE $tableInvoiceLines (
     _updateToV9(batch);
     _updateToV10(batch);
     _updateToV11(batch);
+    _updateToV12(batch);
+    _updateToV13(batch);
   }
 
   void _updateToV3(Batch batch) {
@@ -744,6 +756,234 @@ CREATE TABLE $tableSuppliers (
     batch.execute('''ALTER TABLE TEMP RENAME TO $tableEstimates''');
   }
 
+  void _updateToV12(Batch batch) {
+    /// Update table receipts by adding fields : payerId
+    batch.execute('''
+    CREATE TABLE TEMP ( 
+        ${ReceiptFields.id} $idType, 
+        ${ReceiptFields.date} $textType, 
+        ${ReceiptFields.receivedFrom} $textType,
+        ${ReceiptFields.sumOf} $textType,
+        ${ReceiptFields.amount} $numType,
+        ${ReceiptFields.amountFor} $textType,
+        ${ReceiptFields.payType} $textType,
+        ${ReceiptFields.chequeNo} $text,
+        ${ReceiptFields.chequeDate} $text,
+        ${ReceiptFields.transferNo} $text,
+        ${ReceiptFields.transferDate} $text,
+        ${ReceiptFields.bank} $text,
+        ${ReceiptFields.payTo} $text,
+        ${ReceiptFields.receiptType} $text,
+        ${ReceiptFields.payerId} $intType
+      )
+    ''');
+    batch.execute('''
+    INSERT INTO TEMP ( 
+      ${ReceiptFields.id}, 
+      ${ReceiptFields.date}, 
+      ${ReceiptFields.receivedFrom}, 
+      ${ReceiptFields.sumOf},
+      ${ReceiptFields.amount},
+      ${ReceiptFields.amountFor},
+      ${ReceiptFields.payType},
+      ${ReceiptFields.chequeNo},
+      ${ReceiptFields.chequeDate},
+      ${ReceiptFields.transferNo},
+      ${ReceiptFields.transferDate},
+      ${ReceiptFields.bank},
+      ${ReceiptFields.payTo},
+      ${ReceiptFields.receiptType},
+      ${ReceiptFields.payerId}
+      ) SELECT 
+      ${ReceiptFields.id}, 
+      ${ReceiptFields.date}, 
+      ${ReceiptFields.receivedFrom},
+      ${ReceiptFields.sumOf},
+      ${ReceiptFields.amount},
+      ${ReceiptFields.amountFor},
+      ${ReceiptFields.payType},
+      ${ReceiptFields.chequeNo},
+      ${ReceiptFields.chequeDate},
+      ${ReceiptFields.transferNo},
+      ${ReceiptFields.transferDate},
+      ${ReceiptFields.bank},
+      ${ReceiptFields.payTo},
+      ${ReceiptFields.receiptType},
+      0 FROM $tableReceipts
+    ''');
+    batch.execute('''DROP TABLE $tableReceipts''');
+    batch.execute('''ALTER TABLE TEMP RENAME TO $tableReceipts''');
+
+    /// Update table purchases by adding fields : paymentMethod
+    batch.execute('''
+    CREATE TABLE TEMP ( 
+      ${PurchaseFields.id} $idType, 
+      ${PurchaseFields.date} $textType,
+      ${PurchaseFields.vendor} $textType,
+      ${PurchaseFields.vendorVatNumber} $textType,
+      ${PurchaseFields.total} $numType,
+      ${PurchaseFields.totalVat} $numType,
+      ${PurchaseFields.details} $text,
+      ${PurchaseFields.paymentMethod} $text
+      )
+    ''');
+    batch.execute('''
+    INSERT INTO TEMP ( 
+      ${PurchaseFields.id}, 
+      ${PurchaseFields.date},
+      ${PurchaseFields.vendor},
+      ${PurchaseFields.vendorVatNumber},
+      ${PurchaseFields.total},  
+      ${PurchaseFields.totalVat},
+      ${PurchaseFields.details},
+      ${PurchaseFields.paymentMethod}
+      ) SELECT 
+      ${PurchaseFields.id}, 
+      ${PurchaseFields.date},
+      ${PurchaseFields.vendor},
+      ${PurchaseFields.vendorVatNumber},
+      ${PurchaseFields.total},
+      ${PurchaseFields.totalVat},
+      ${PurchaseFields.details},
+      "حوالة" FROM $tablePurchases
+    ''');
+    batch.execute('''DROP TABLE $tablePurchases''');
+    batch.execute('''ALTER TABLE TEMP RENAME TO $tablePurchases''');
+
+    /// Adding new tables: contract, clauses and clauses_lines
+    batch.execute('''
+    CREATE TABLE $tableContracts ( 
+      ${ContractFields.id} $idType, 
+      ${ContractFields.contractNo} $textType, 
+      ${ContractFields.date} $textType,
+      ${ContractFields.firstParty} $textType,
+      ${ContractFields.secondParty} $textType,
+      ${ContractFields.total} $numType,
+      ${ContractFields.title} $textType
+      )
+    ''');
+    batch.execute('''
+    CREATE TABLE $tableClauses ( 
+      ${ClausesFields.id} $idType, 
+      ${ClausesFields.contractId} $integerType, 
+      ${ClausesFields.clauseName} $textType,
+
+    FOREIGN KEY (${ClausesFields.contractId})
+      REFERENCES $tableContracts(${ContractFields.id})
+      ON DELETE CASCADE
+      )
+    ''');
+    batch.execute('''
+    CREATE TABLE $tableClausesLines ( 
+      ${ClausesLinesFields.id} $idType, 
+      ${ClausesLinesFields.clauseId} $integerType, 
+      ${ClausesLinesFields.description} $textType,
+
+    FOREIGN KEY (${ClausesLinesFields.clauseId})
+      REFERENCES $tableClauses(${ClausesFields.id})
+      ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  void _updateToV13(Batch batch) {
+    /// add cols environment, dev_authorization, sim_authorization,
+    /// core_authorization to table receipts
+    batch.execute('''
+    CREATE TABLE TEMP ( 
+        ${SettingFields.id} $idType, 
+        ${SettingFields.logo} $textType, 
+        ${SettingFields.terms} $textType,
+        ${SettingFields.logoWidth} $integerType,
+        ${SettingFields.logoHeight} $integerType,
+        ${SettingFields.environment} $textType,
+        ${SettingFields.devAuthorization} $textType,
+        ${SettingFields.simAuthorization} $textType,
+        ${SettingFields.coreAuthorization} $textType
+      )
+    ''');
+    batch.execute('''
+    INSERT INTO TEMP ( 
+      ${SettingFields.id}, 
+      ${SettingFields.logo}, 
+      ${SettingFields.terms}, 
+      ${SettingFields.logoWidth},
+      ${SettingFields.logoHeight},
+      ${SettingFields.environment},
+      ${SettingFields.devAuthorization},
+      ${SettingFields.simAuthorization},
+      ${SettingFields.coreAuthorization}
+      ) SELECT 
+      ${SettingFields.id}, 
+      ${SettingFields.logo}, 
+      ${SettingFields.terms},
+      ${SettingFields.logoWidth},
+      ${SettingFields.logoHeight},
+      "",
+      "",
+      "",
+      "" FROM $tableSettings
+    ''');
+    batch.execute('''DROP TABLE $tableSettings''');
+    batch.execute('''ALTER TABLE TEMP RENAME TO $tableSettings''');
+  }
+
+  Future<List<Map<String, dynamic>>> getCustomerStatement(
+      int payerId, String dateFrom, String dateTo) async {
+    final db = await instance.database;
+
+    final invoices = await db.rawQuery(
+      """
+      SELECT 
+        ${InvoiceFields.date} AS date,
+          'فاتورة رقم ' || ${InvoiceFields.invoiceNo} || ' ' || ${InvoiceFields.paymentMethod} AS description,
+    
+        CASE 
+          WHEN ${InvoiceFields.paymentMethod} = 'آجل'
+          THEN 0.0
+          ELSE ${InvoiceFields.total}
+        END AS credit,
+    
+        CASE 
+          WHEN ${InvoiceFields.paymentMethod} = 'آجل'
+          THEN ${InvoiceFields.total}
+          ELSE ${InvoiceFields.total}
+        END AS debit
+    
+      FROM $tableInvoices
+      WHERE ${InvoiceFields.payerId} = ?
+        AND ${InvoiceFields.date} >= ?
+        AND ${InvoiceFields.date} <= ?
+      """,
+      [payerId, dateFrom, "$dateTo 23:59"],
+    );
+
+    // Fetch Receipts as Credits
+    final receipts = await db.rawQuery(
+        "SELECT ${ReceiptFields.date} as date, "
+        "${ReceiptFields.amountFor} || ' سند رقم ' || ${ReceiptFields.id} || ' الدفع ' || ${ReceiptFields.payType} AS description, "
+        "0.0 as debit, ${ReceiptFields.amount} as credit "
+        "FROM $tableReceipts "
+        "WHERE ${ReceiptFields.payerId} = ? AND ${ReceiptFields.date} >= ? AND ${ReceiptFields.date} <= ?",
+        [payerId, dateFrom, "$dateTo 23:59"]);
+
+    // Combine and Sort
+    List<Map<String, dynamic>> combined = List.from(invoices)..addAll(receipts);
+    combined.sort((a, b) => a['date'].compareTo(b['date']));
+
+    // Calculate Running Balance
+    double balance = 0;
+    return combined.map((item) {
+      double debit = (item['debit'] as num).toDouble();
+      double credit = (item['credit'] as num).toDouble();
+      balance += (debit - credit);
+      return {
+        ...item,
+        'balance': balance,
+      };
+    }).toList();
+  }
+
   /// Table settings CRUD operations
   Future<Setting> createSetting(Setting setting) async {
     final db = await instance.database;
@@ -897,9 +1137,7 @@ CREATE TABLE $tableSuppliers (
     );
 
     if (maps.isNotEmpty) {
-      return Customer
-          .fromJson(maps.first)
-          .vatNumber;
+      return Customer.fromJson(maps.first).vatNumber;
     } else {
       throw Exception('ID $id not found in the local database');
     }
@@ -1117,9 +1355,7 @@ CREATE TABLE $tableSuppliers (
     );
 
     if (maps.isNotEmpty) {
-      return Supplier
-          .fromJson(maps.first)
-          .id;
+      return Supplier.fromJson(maps.first).id;
     } else {
       throw Exception('Supplier $vat not found');
     }
@@ -1219,6 +1455,17 @@ CREATE TABLE $tableSuppliers (
     }
   }
 
+  Future<Contract> createContract(Contract contract) async {
+    final db = await instance.database;
+    final id = await db.insert(tableContracts, contract.toJson());
+
+    if (id > 0) {
+      return contract.copy(id: id);
+    } else {
+      throw Exception('Record NOT created');
+    }
+  }
+
   Future<int?> getInvoicesCount() async {
     //database connection
     Database db = await database;
@@ -1232,8 +1479,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     int? count = Sqflite.firstIntValue(await db.rawQuery(
         "SELECT COUNT(*) FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} <= '${year + 1}-01-01'"));
     return count;
   }
 
@@ -1258,6 +1504,14 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     int? count = Sqflite.firstIntValue(
         await db.rawQuery('SELECT COUNT(*) FROM $tableReceipts'));
+    return count;
+  }
+
+  Future<int?> getContractsCount() async {
+    //database connection
+    Database db = await database;
+    int? count = Sqflite.firstIntValue(
+        await db.rawQuery('SELECT COUNT(*) FROM $tableContracts'));
     return count;
   }
 
@@ -1311,10 +1565,17 @@ CREATE TABLE $tableSuppliers (
     return count;
   }
 
+  Future<int?> getNewContractId() async {
+    Database db = await database;
+    int? count = Sqflite.firstIntValue(await db.rawQuery(
+        "SELECT seq FROM sqlite_sequence where name= '$tableContracts'"));
+    return count;
+  }
+
   Future<int?> deleteAllInvoices() async {
     Database db = await database;
     int? count =
-    Sqflite.firstIntValue(await db.rawQuery('DELETE FROM $tableInvoices'));
+        Sqflite.firstIntValue(await db.rawQuery('DELETE FROM $tableInvoices'));
     return count;
   }
 
@@ -1356,16 +1617,13 @@ CREATE TABLE $tableSuppliers (
   Future<num?> getTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery("SELECT "
-        "SUM(CASE WHEN ${InvoiceFields
-        .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-        "         WHEN ${InvoiceFields
-        .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "         WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
         "         ELSE 0 END) AS ttl "
         "FROM $tableInvoices "
         "WHERE ${InvoiceFields.date} >= '$year-01-01' "
         "AND ${InvoiceFields.date} < '${year + 1}-01-01' "
-        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-        .statusCode} = 'REPORTED')");
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
 
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
@@ -1373,201 +1631,151 @@ CREATE TABLE $tableSuppliers (
   Future<num?> getJanTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields
-            .date} < '$year-02-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-01-01' AND ${InvoiceFields.date} < '$year-02-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getFebTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-02-01' AND ${InvoiceFields
-            .date} < '$year-03-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-02-01' AND ${InvoiceFields.date} < '$year-03-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getMarTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-03-01' AND ${InvoiceFields
-            .date} < '$year-04-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-03-01' AND ${InvoiceFields.date} < '$year-04-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getAprTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-04-01' AND ${InvoiceFields
-            .date} < '$year-05-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-04-01' AND ${InvoiceFields.date} < '$year-05-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getMayTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-05-01' AND ${InvoiceFields
-            .date} < '$year-06-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-05-01' AND ${InvoiceFields.date} < '$year-06-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getJunTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-06-01' AND ${InvoiceFields
-            .date} < '$year-07-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-06-01' AND ${InvoiceFields.date} < '$year-07-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getJulTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-07-01' AND ${InvoiceFields
-            .date} < '$year-08-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-07-01' AND ${InvoiceFields.date} < '$year-08-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getAugTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-08-01' AND ${InvoiceFields
-            .date} < '$year-09-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-08-01' AND ${InvoiceFields.date} < '$year-09-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getSepTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-09-01' AND ${InvoiceFields
-            .date} < '$year-10-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-09-01' AND ${InvoiceFields.date} < '$year-10-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getOctTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-10-01' AND ${InvoiceFields
-            .date} < '$year-11-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-10-01' AND ${InvoiceFields.date} < '$year-11-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getNovTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-11-01' AND ${InvoiceFields
-            .date} < '$year-12-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-11-01' AND ${InvoiceFields.date} < '$year-12-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getDecTotalSales(int year) async {
     Database db = await database;
     var sum = await db.rawQuery(
-        "SELECT SUM(CASE WHEN ${InvoiceFields
-            .invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
-            "               WHEN ${InvoiceFields
-            .invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
-            "               ELSE 0 END) AS ttl "
-            "FROM $tableInvoices "
-            "WHERE ${InvoiceFields.date} >= '$year-12-01' AND ${InvoiceFields
-            .date} < '${year + 1}-01-01' "
-            "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields
-            .statusCode} = 'REPORTED')");
+        "SELECT SUM(CASE WHEN ${InvoiceFields.invoiceKind} = 'invoice' THEN ${InvoiceFields.total} "
+        "               WHEN ${InvoiceFields.invoiceKind} = 'credit' THEN -${InvoiceFields.total} "
+        "               ELSE 0 END) AS ttl "
+        "FROM $tableInvoices "
+        "WHERE ${InvoiceFields.date} >= '$year-12-01' AND ${InvoiceFields.date} < '${year + 1}-01-01' "
+        "AND (${InvoiceFields.statusCode} = 'CLEARED' OR ${InvoiceFields.statusCode} = 'REPORTED')");
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
   Future<num?> getTotalCreditNotes() async {
     Database db = await database;
     var sum = (await db.rawQuery(
-        'SELECT SUM(${InvoiceFields
-            .total}) AS ttl FROM $tableInvoices WHERE ${InvoiceFields
-            .total} < 0'));
+        'SELECT SUM(${InvoiceFields.total}) AS ttl FROM $tableInvoices WHERE ${InvoiceFields.total} < 0'));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1643,7 +1851,28 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
 
     const orderBy = '${InvoiceFields.id} DESC';
-    final result = await db.query(tableInvoices, orderBy: orderBy);
+
+    List<Map<String, dynamic>> result;
+
+    if (Utils.showAllData == 1) {
+      // Get all invoices
+      result = await db.query(
+        tableInvoices,
+        orderBy: orderBy,
+      );
+    } else {
+      // Get invoices for current year only
+      final int currentYear = DateTime.now().year;
+      final String yearStart = '$currentYear-01-01';
+      final String yearEnd = '$currentYear-12-31 23:59';
+
+      result = await db.query(
+        tableInvoices,
+        where: "${InvoiceFields.date} >= ? AND ${InvoiceFields.date} <= ?",
+        whereArgs: [yearStart, yearEnd],
+        orderBy: orderBy,
+      );
+    }
 
     return result.map((json) => Invoice.fromJson(json)).toList();
   }
@@ -1652,9 +1881,7 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
     List<Invoice> invoices;
     final result = await db.rawQuery(
-        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields
-            .statusCode} = 'REPORTED' OR ${InvoiceFields
-            .statusCode} = 'CLEARED' ORDER BY ${InvoiceFields.icv} DESC");
+        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields.statusCode} = 'REPORTED' OR ${InvoiceFields.statusCode} = 'CLEARED' ORDER BY ${InvoiceFields.icv} DESC");
     invoices = result.map((json) => Invoice.fromJson(json)).toList();
     return invoices.isEmpty ? 0 : invoices.first.icv;
   }
@@ -1663,35 +1890,43 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
     List<Invoice> invoices;
     final result = await db.rawQuery(
-        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields
-            .statusCode} = 'REPORTED' OR ${InvoiceFields
-            .statusCode} = 'CLEARED' ORDER BY ${InvoiceFields.icv} DESC");
+        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields.statusCode} = 'REPORTED' OR ${InvoiceFields.statusCode} = 'CLEARED' ORDER BY ${InvoiceFields.icv} DESC");
     invoices = result.map((json) => Invoice.fromJson(json)).toList();
     return invoices.isEmpty
         ? "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ=="
         : invoices.first.invoiceHash;
   }
 
-  Future<List<Invoice>> getAllInvoicesBetweenTwoDates(String dateFrom,
-      String dateTo) async {
+  Future<List<Clauses>> getClausesByContractId(int contractId) async {
+    final db = await instance.database;
+    final result = await db.rawQuery(
+        "SELECT * FROM $tableClauses WHERE ${ClausesFields.contractId} = $contractId");
+    return result.map((json) => Clauses.fromJson(json)).toList();
+  }
+
+  Future<List<ClausesLines>> getLinesByClauseId(int clauseId) async {
+    final db = await instance.database;
+    final result = await db.rawQuery(
+        "SELECT * FROM $tableClausesLines WHERE ${ClausesLinesFields.clauseId} = $clauseId");
+    return result.map((json) => ClausesLines.fromJson(json)).toList();
+  }
+
+  Future<List<Invoice>> getAllInvoicesBetweenTwoDates(
+      String dateFrom, String dateTo) async {
     final db = await instance.database;
 
     final result = await db.rawQuery(
-        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields
-            .date} >= '$dateFrom' AND ${InvoiceFields
-            .date} <= '$dateTo 23:59'");
+        "SELECT * FROM $tableInvoices WHERE ${InvoiceFields.date} >= '$dateFrom' AND ${InvoiceFields.date} <= '$dateTo 23:59'");
 
     return result.map((json) => Invoice.fromJson(json)).toList();
   }
 
-  Future<List<Purchase>> getAllPurchasesBetweenTwoDates(String dateFrom,
-      String dateTo) async {
+  Future<List<Purchase>> getAllPurchasesBetweenTwoDates(
+      String dateFrom, String dateTo) async {
     final db = await instance.database;
 
     final result = await db.rawQuery(
-        "SELECT * FROM $tablePurchases WHERE ${PurchaseFields
-            .date} >= '$dateFrom' AND ${PurchaseFields
-            .date} <= '$dateTo 23:59'");
+        "SELECT * FROM $tablePurchases WHERE ${PurchaseFields.date} >= '$dateFrom' AND ${PurchaseFields.date} <= '$dateTo 23:59'");
 
     return result.map((json) => Purchase.fromJson(json)).toList();
   }
@@ -1740,6 +1975,17 @@ CREATE TABLE $tableSuppliers (
     );
   }
 
+  Future<int> updateContract(Contract contract) async {
+    final db = await instance.database;
+
+    return db.update(
+      tableContracts,
+      contract.toJson(),
+      where: '${ContractFields.id} = ?',
+      whereArgs: [contract.id],
+    );
+  }
+
   Future<int> deleteInvoice(Invoice invoice) async {
     final db = await instance.database;
 
@@ -1777,8 +2023,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     int? count = Sqflite.firstIntValue(await db.rawQuery(
         "SELECT COUNT(*) FROM $tablePurchases "
-            "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '${year + 1}-01-01'"));
     return count;
   }
 
@@ -1792,7 +2037,7 @@ CREATE TABLE $tableSuppliers (
   Future<int?> deleteAllPurchases() async {
     Database db = await database;
     int? count =
-    Sqflite.firstIntValue(await db.rawQuery('DELETE FROM $tablePurchases'));
+        Sqflite.firstIntValue(await db.rawQuery('DELETE FROM $tablePurchases'));
     return count;
   }
 
@@ -1824,12 +2069,18 @@ CREATE TABLE $tableSuppliers (
     return count;
   }
 
+  Future<int?> deleteContractSequence() async {
+    Database db = await database;
+    int? count = Sqflite.firstIntValue(await db
+        .rawQuery("DELETE FROM sqlite_sequence where name= 'contracts'"));
+    return count;
+  }
+
   Future<num?> getTotalExpenses(int year) async {
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${ReceiptFields.amount}) AS ttl FROM $tableReceipts  "
-            "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1837,8 +2088,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1846,8 +2096,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${EstimateFields.total}) AS ttl FROM $tableEstimates  "
-            "WHERE ${EstimateFields.date} >= '$year-01-01' AND ${EstimateFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${EstimateFields.date} >= '$year-01-01' AND ${EstimateFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1855,8 +2104,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PoFields.total}) AS ttl FROM $tablePo  "
-            "WHERE ${PoFields.date} >= '$year-01-01' AND ${PoFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${PoFields.date} >= '$year-01-01' AND ${PoFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1864,8 +2112,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${ReceiptFields.amount}) AS ttl FROM $tableReceipts  "
-            "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${ReceiptFields.date} >= '$year-01-01' AND ${ReceiptFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1873,8 +2120,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases "
-            "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields
-            .date} <= '$year-02-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-01-01' AND ${PurchaseFields.date} <= '$year-02-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1882,8 +2128,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-02-01' AND ${PurchaseFields
-            .date} <= '$year-03-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-02-01' AND ${PurchaseFields.date} <= '$year-03-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1891,8 +2136,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-03-01' AND ${PurchaseFields
-            .date} <= '$year-04-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-03-01' AND ${PurchaseFields.date} <= '$year-04-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1900,8 +2144,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-04-01' AND ${PurchaseFields
-            .date} <= '$year-05-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-04-01' AND ${PurchaseFields.date} <= '$year-05-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1909,8 +2152,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-05-01' AND ${PurchaseFields
-            .date} <= '$year-06-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-05-01' AND ${PurchaseFields.date} <= '$year-06-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1918,8 +2160,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-06-01' AND ${PurchaseFields
-            .date} <= '$year-07-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-06-01' AND ${PurchaseFields.date} <= '$year-07-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1927,8 +2168,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-07-01' AND ${PurchaseFields
-            .date} <= '$year-08-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-07-01' AND ${PurchaseFields.date} <= '$year-08-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1936,8 +2176,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-08-01' AND ${PurchaseFields
-            .date} <= '$year-09-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-08-01' AND ${PurchaseFields.date} <= '$year-09-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1945,8 +2184,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-09-01' AND ${PurchaseFields
-            .date} <= '$year-10-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-09-01' AND ${PurchaseFields.date} <= '$year-10-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1954,8 +2192,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-10-01' AND ${PurchaseFields
-            .date} <= '$year-11-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-10-01' AND ${PurchaseFields.date} <= '$year-11-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1963,8 +2200,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-11-01' AND ${PurchaseFields
-            .date} <= '$year-12-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-11-01' AND ${PurchaseFields.date} <= '$year-12-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1972,8 +2208,7 @@ CREATE TABLE $tableSuppliers (
     Database db = await database;
     var sum = (await db.rawQuery(
         "SELECT SUM(${PurchaseFields.total}) AS ttl FROM $tablePurchases  "
-            "WHERE ${PurchaseFields.date} >= '$year-12-01' AND ${PurchaseFields
-            .date} <= '${year + 1}-01-01'"));
+        "WHERE ${PurchaseFields.date} >= '$year-12-01' AND ${PurchaseFields.date} <= '${year + 1}-01-01'"));
     return sum[0]['ttl'] == null ? 0 : num.parse('${sum[0]['ttl']}');
   }
 
@@ -1998,7 +2233,28 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
 
     const orderBy = '${PurchaseFields.id} DESC';
-    final result = await db.query(tablePurchases, orderBy: orderBy);
+
+    List<Map<String, dynamic>> result;
+
+    if (Utils.showAllData == 1) {
+      // Get all data
+      result = await db.query(
+        tablePurchases,
+        orderBy: orderBy,
+      );
+    } else {
+      // Get data for current year only
+      final int currentYear = DateTime.now().year;
+      final String yearStart = '$currentYear-01-01';
+      final String yearEnd = '$currentYear-12-31 23:59';
+
+      result = await db.query(
+        tablePurchases,
+        where: "${PurchaseFields.date} >= ? AND ${PurchaseFields.date} <= ?",
+        whereArgs: [yearStart, yearEnd],
+        orderBy: orderBy,
+      );
+    }
 
     return result.map((json) => Purchase.fromJson(json)).toList();
   }
@@ -2007,7 +2263,28 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
 
     const orderBy = '${EstimateFields.id} DESC';
-    final result = await db.query(tableEstimates, orderBy: orderBy);
+
+    List<Map<String, dynamic>> result;
+
+    if (Utils.showAllData == 1) {
+      // Get all data
+      result = await db.query(
+        tableEstimates,
+        orderBy: orderBy,
+      );
+    } else {
+      // Get data for current year only
+      final int currentYear = DateTime.now().year;
+      final String yearStart = '$currentYear-01-01';
+      final String yearEnd = '$currentYear-12-31 23:59';
+
+      result = await db.query(
+        tableEstimates,
+        where: "${EstimateFields.date} >= ? AND ${EstimateFields.date} <= ?",
+        whereArgs: [yearStart, yearEnd],
+        orderBy: orderBy,
+      );
+    }
 
     return result.map((json) => Estimate.fromJson(json)).toList();
   }
@@ -2016,7 +2293,28 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
 
     const orderBy = '${PoFields.id} DESC';
-    final result = await db.query(tablePo, orderBy: orderBy);
+
+    List<Map<String, dynamic>> result;
+
+    if (Utils.showAllData == 1) {
+      // Get all data
+      result = await db.query(
+        tablePo,
+        orderBy: orderBy,
+      );
+    } else {
+      // Get data for current year only
+      final int currentYear = DateTime.now().year;
+      final String yearStart = '$currentYear-01-01';
+      final String yearEnd = '$currentYear-12-31 23:59';
+
+      result = await db.query(
+        tablePo,
+        where: "${PoFields.date} >= ? AND ${PoFields.date} <= ?",
+        whereArgs: [yearStart, yearEnd],
+        orderBy: orderBy,
+      );
+    }
 
     return result.map((json) => Po.fromJson(json)).toList();
   }
@@ -2025,9 +2323,60 @@ CREATE TABLE $tableSuppliers (
     final db = await instance.database;
 
     const orderBy = '${ReceiptFields.id} DESC';
-    final result = await db.query(tableReceipts, orderBy: orderBy);
+
+    List<Map<String, dynamic>> result;
+
+    if (Utils.showAllData == 1) {
+      // Get all data
+      result = await db.query(
+        tableReceipts,
+        orderBy: orderBy,
+      );
+    } else {
+      // Get data for current year only
+      final int currentYear = DateTime.now().year;
+      final String yearStart = '$currentYear-01-01';
+      final String yearEnd = '$currentYear-12-31 23:59';
+
+      result = await db.query(
+        tableReceipts,
+        where: "${ReceiptFields.date} >= ? AND ${ReceiptFields.date} <= ?",
+        whereArgs: [yearStart, yearEnd],
+        orderBy: orderBy,
+      );
+    }
 
     return result.map((json) => Receipt.fromJson(json)).toList();
+  }
+
+  Future<List<Contract>> getAllContracts() async {
+    final db = await instance.database;
+
+    const orderBy = '${ContractFields.id} DESC';
+
+    List<Map<String, dynamic>> result;
+
+    if (Utils.showAllData == 1) {
+      // Get all data
+      result = await db.query(
+        tableContracts,
+        orderBy: orderBy,
+      );
+    } else {
+      // Get data for current year only
+      final int currentYear = DateTime.now().year;
+      final String yearStart = '$currentYear-01-01';
+      final String yearEnd = '$currentYear-12-31 23:59';
+
+      result = await db.query(
+        tableContracts,
+        where: "${ContractFields.date} >= ? AND ${ContractFields.date} <= ?",
+        whereArgs: [yearStart, yearEnd],
+        orderBy: orderBy,
+      );
+    }
+
+    return result.map((json) => Contract.fromJson(json)).toList();
   }
 
   Future<int> updatePurchase(Purchase invoice) async {
@@ -2081,11 +2430,21 @@ CREATE TABLE $tableSuppliers (
     );
   }
 
+  Future<int> deleteContractById(int id) async {
+    final db = await instance.database;
+
+    return await db.delete(
+      tableContracts,
+      where: '${ContractFields.id} = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// End table invoices CRUD operations
 
   /// Table InvoiceLines CRUD operations
-  Future<InvoiceLines> createInvoiceLines(InvoiceLines invoiceLines,
-      int recId) async {
+  Future<InvoiceLines> createInvoiceLines(
+      InvoiceLines invoiceLines, int recId) async {
     final db = await instance.database;
     final id = await db.insert(tableInvoiceLines, invoiceLines.toJson());
 
@@ -2096,8 +2455,8 @@ CREATE TABLE $tableSuppliers (
     }
   }
 
-  Future<EstimateLines> createEstimateLines(EstimateLines estimateLines,
-      int recId) async {
+  Future<EstimateLines> createEstimateLines(
+      EstimateLines estimateLines, int recId) async {
     final db = await instance.database;
     final id = await db.insert(tableEstimateLines, estimateLines.toJson());
 

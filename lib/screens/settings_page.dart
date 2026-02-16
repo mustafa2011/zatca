@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zatca/helpers/zatca_api.dart';
 
 import '/models/settings.dart';
@@ -32,36 +33,33 @@ class _SettingsPageState extends State<SettingsPage> {
   String terms = Utils.terms;
   int logoWidth = Utils.logoWidth;
   int logoHeight = Utils.logoHeight;
-
+  int _showAllData = Utils.showAllData; // local copy for UI
   @override
   void initState() {
     super.initState();
+    _loadCurrentSetting();
+  }
+
+  Future<void> _loadCurrentSetting() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showAllData = prefs.getInt('showAllData') ?? 1;
+    });
+  }
+
+  Future<void> _updateShowAllData(int value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('showAllData', value);
+
+    setState(() {
+      _showAllData = value;
+      Utils.showAllData = value; // update global static
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
-  }
-
-  void messageBox(String title, String? message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message!),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("موافق"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -76,29 +74,6 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: Utils.primary,
           foregroundColor: Colors.white,
           actions: [
-            /*
-            IconButton(
-                onPressed: selectAndReplaceDb,
-                tooltip: "استيراد ملف بيانات",
-                icon: Icon(
-                  Icons.file_download_outlined,
-                  color: Colors.white,
-                  size: 35,
-                )),
-            IconButton(
-                onPressed: () {
-                  setState(() => isLoading = true);
-                  String dt = DateFormat('yyyyMMdd').format(DateTime.now());
-                  backupDatabase('fatoora_${Utils.clientId}_$dt.db');
-                  setState(() => isLoading = false);
-                },
-                tooltip: "تصدير ملف بيانات",
-                icon: Icon(
-                  Icons.file_upload_outlined,
-                  color: Colors.white,
-                  size: 35,
-                )),
-            */
             backHome,
           ],
         ),
@@ -125,51 +100,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   foregroundColor: WidgetStateProperty.all(Colors.white)),
               child: Text("تصدير ملف بيانات"),
             ),
-
-            /*
-            NewButton(
-              text: 'حفظ الاعدادات',
-              onTap: () async {
-                setState(() => isLoading = true);
-                await updateSetting();
-                setState(() => isLoading = false);
-                ZatcaAPI.successMessage("تم حفظ الاعدادات");
-              },
-            ),
-            NewButton(
-              text: 'تغيير الشعار',
-              onTap: () async {
-                File? customImageFile;
-                if (Platform.isWindows) {
-                  var image = await FilePicker.platform.pickFiles(
-                    type: FileType.custom,
-                    allowedExtensions: ['jpg', 'png', 'jpeg'],
-                  );
-                  customImageFile = image != null
-                      ? File(image.files.first.path.toString())
-                      : File(
-                          '${(await getTemporaryDirectory()).path}/logo.png');
-                } else {
-                  var img = await ImagePicker()
-                      .pickImage(source: ImageSource.gallery);
-                  customImageFile = File(img!.path);
-                }
-                String imgString =
-                    base64Encode(customImageFile.readAsBytesSync());
-                setState(() {
-                  logo = imgString;
-                });
-              },
-            ),
-            NewButton(
-              text: 'الرئيسية',
-              onTap: () async {
-                setState(() => isLoading = true);
-                Get.to(() => const HomePage());
-                setState(() => isLoading = false);
-              },
-            ),
-            */
           ],
         ),
         body: Container(
@@ -177,6 +107,36 @@ class _SettingsPageState extends State<SettingsPage> {
           color: Utils.background,
           child: Column(
             children: [
+              RadioGroup<int>(
+                groupValue: _showAllData,
+                onChanged: (value) {
+                  setState(() => _showAllData = value!);
+                  if (value != null) _updateShowAllData(value);
+                },
+                child: const RadioListTile<int>(
+                  dense: true,
+                  title: Text(
+                    'اظهار بيانات السنة الحالية',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  value: 0,
+                ),
+              ),
+              RadioGroup<int>(
+                groupValue: _showAllData,
+                onChanged: (value) {
+                  setState(() => _showAllData = value!);
+                  if (value != null) _updateShowAllData(value);
+                },
+                child: const RadioListTile<int>(
+                  dense: true,
+                  title: Text(
+                    'اظهار جميع البيانات',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  value: 1,
+                ),
+              ),
               Expanded(
                   child: Container(
                 padding: const EdgeInsets.all(10),
@@ -233,7 +193,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await FatooraDB.instance.updateSetting(user);
       Get.to(() => const HomePage());
     } on Exception catch (e) {
-      messageBox('تنبيه', "تأكد من وجود اتصال بالانترنت\n$e");
+      ZatcaAPI.errorMessage("تأكد من وجود اتصال بالانترنت\n$e");
     }
   }
 
